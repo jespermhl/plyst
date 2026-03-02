@@ -75,7 +75,7 @@ export default async function Home() {
             ))}
           </div>
           <p className="text-xs font-medium tracking-widest text-slate-400 uppercase">
-            +420 Creator warten bereits
+            67+ Creator warten bereits
           </p>
         </div>
       </section>

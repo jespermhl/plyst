@@ -6,8 +6,25 @@ export const waitlistRouter = createTRPCRouter({
   join: publicProcedure
     .input(z.object({ email: z.string().email() }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.insert(waitlist).values({
-        email: input.email,
-      });
+      const normalizedEmail = input.email.trim().toLowerCase();
+      try {
+        await ctx.db.insert(waitlist).values({
+          email: normalizedEmail,
+        });
+
+        return { success: true, alreadyExists: false };
+      } catch (error) {
+        const pgError = error as { code?: string; message?: string };
+        
+        const isUniqueViolation = 
+          pgError.code === "23505" || 
+          pgError.message?.includes("unique constraint");
+
+        if (isUniqueViolation) {
+          return { success: true, alreadyExists: true };
+        }
+
+        throw error;
+      }
     }),
 });

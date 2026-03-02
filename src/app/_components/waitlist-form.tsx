@@ -12,7 +12,16 @@ export function WaitlistForm() {
   const joinMutation = api.waitlist.join.useMutation({
     onMutate: () => setStatus("loading"),
     onSuccess: () => setStatus("success"),
-    onError: () => setStatus("error"),
+    onError: (error) => {
+      if (
+        error.message.includes("unique constraint") ||
+        error.data?.code === "CONFLICT"
+      ) {
+        setStatus("success");
+      } else {
+        setStatus("error");
+      }
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
