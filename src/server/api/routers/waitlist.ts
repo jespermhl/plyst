@@ -1,4 +1,3 @@
-// src/server/api/routers/waitlist.ts
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { waitlist } from "~/server/db/schema";
