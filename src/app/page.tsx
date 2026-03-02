@@ -60,6 +60,179 @@ export default async function Home() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-7xl px-4 py-32">
+        <div className="mb-16 text-center">
+          <p className="font-body text-sm font-semibold tracking-widest text-blue-600 uppercase">
+            Features
+          </p>
+          <h2 className="font-display mt-3 text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">
+            Alles, was du brauchst
+          </h2>
+          <p className="font-body mx-auto mt-4 max-w-lg text-base leading-relaxed text-slate-500">
+            Von individuellen Designs bis hin zu detaillierten Analytics – Plyst
+            gibt dir die volle Kontrolle.
+          </p>
+        </div>
+
+        <div className="grid auto-rows-[minmax(200px,auto)] grid-cols-1 gap-4 md:grid-cols-3">
+          {/* Card 1 – tall, spans 2 rows */}
+          <div className="group relative row-span-2 overflow-hidden rounded-3xl border border-slate-200/60 bg-linear-to-br from-blue-50 to-white p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-100/40">
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100 text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white">
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42"
+                />
+              </svg>
+            </div>
+            <h3 className="font-display text-xl font-bold text-slate-900">
+              Custom Designs
+            </h3>
+            <p className="font-body mt-3 text-sm leading-relaxed text-slate-500">
+              Wähle aus hunderten Templates oder erstelle dein eigenes Design
+              von Grund auf. Farben, Schriften, Layouts – alles anpassbar.
+            </p>
+            <div className="pointer-events-none absolute -right-8 -bottom-8 h-40 w-40 rounded-full bg-blue-200/30 blur-2xl transition-all group-hover:bg-blue-300/40" />
+          </div>
+
+          {/* Card 2 – wide */}
+          <div className="group relative col-span-1 overflow-hidden rounded-3xl border border-slate-200/60 bg-linear-to-br from-violet-50 to-white p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-100/40 md:col-span-2">
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-100 text-violet-600 transition-colors group-hover:bg-violet-600 group-hover:text-white">
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"
+                />
+              </svg>
+            </div>
+            <h3 className="font-display text-xl font-bold text-slate-900">
+              Detaillierte Analytics
+            </h3>
+            <p className="font-body mt-3 max-w-md text-sm leading-relaxed text-slate-500">
+              Sieh in Echtzeit, wer deine Seite besucht. Klicks, Views und
+              Conversions – alles in einem übersichtlichen Dashboard.
+            </p>
+          </div>
+
+          {/* Card 3 */}
+          <div className="group relative overflow-hidden rounded-3xl border border-slate-200/60 bg-linear-to-br from-amber-50 to-white p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-amber-100/40">
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-600 transition-colors group-hover:bg-amber-600 group-hover:text-white">
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"
+                />
+              </svg>
+            </div>
+            <h3 className="font-display text-xl font-bold text-slate-900">
+              Smart Links
+            </h3>
+            <p className="font-body mt-3 text-sm leading-relaxed text-slate-500">
+              Verknüpfe alle deine Socials, Shops und Projekte an einem Ort.
+            </p>
+          </div>
+
+          {/* Card 4 */}
+          <div className="group relative overflow-hidden rounded-3xl border border-slate-200/60 bg-linear-to-br from-emerald-50 to-white p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-100/40">
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600 transition-colors group-hover:bg-emerald-600 group-hover:text-white">
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"
+                />
+              </svg>
+            </div>
+            <h3 className="font-display text-xl font-bold text-slate-900">
+              Blitzschnell
+            </h3>
+            <p className="font-body mt-3 text-sm leading-relaxed text-slate-500">
+              Edge-optimiert und weltweit in unter 100ms geladen. Deine Besucher
+              warten nie.
+            </p>
+          </div>
+
+          {/* Card 5 – wide */}
+          <div className="group relative col-span-1 overflow-hidden rounded-3xl border border-slate-200/60 bg-linear-to-br from-rose-50 to-white p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-rose-100/40 md:col-span-2">
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-100 text-rose-600 transition-colors group-hover:bg-rose-600 group-hover:text-white">
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"
+                />
+              </svg>
+            </div>
+            <h3 className="font-display text-xl font-bold text-slate-900">
+              Mobile First
+            </h3>
+            <p className="font-body mt-3 max-w-md text-sm leading-relaxed text-slate-500">
+              Jede Seite sieht auf jedem Gerät perfekt aus. Responsives Design
+              ist bei Plyst kein Nachgedanke – es ist der Standard.
+            </p>
+          </div>
+
+          {/* Card 6 */}
+          <div className="group relative overflow-hidden rounded-3xl border border-slate-200/60 bg-linear-to-br from-cyan-50 to-white p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-cyan-100/40">
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-100 text-cyan-600 transition-colors group-hover:bg-cyan-600 group-hover:text-white">
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
+                />
+              </svg>
+            </div>
+            <h3 className="font-display text-xl font-bold text-slate-900">
+              Sicher & Privat
+            </h3>
+            <p className="font-body mt-3 text-sm leading-relaxed text-slate-500">
+              SSL, DSGVO-konform und vollständig verschlüsselt. Deine Daten
+              gehören dir.
+            </p>
+          </div>
+        </div>
+      </section>
+
       <footer className="relative mt-40 overflow-hidden border-t border-slate-200/60 bg-linear-to-b from-slate-50 to-white px-4 pt-20 pb-10">
         <div className="pointer-events-none absolute -top-32 left-1/2 -z-10 h-64 w-[600px] -translate-x-1/2 rounded-full bg-blue-100/40 blur-3xl" />
 
