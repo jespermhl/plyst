@@ -75,7 +75,6 @@ export default async function Home() {
         </div>
 
         <div className="grid auto-rows-[minmax(200px,auto)] grid-cols-1 gap-4 md:grid-cols-3">
-          {/* Card 1 – tall, spans 2 rows */}
           <div className="group relative row-span-2 overflow-hidden rounded-3xl border border-slate-200/60 bg-linear-to-br from-blue-50 to-white p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-100/40">
             <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100 text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white">
               <svg
@@ -102,7 +101,6 @@ export default async function Home() {
             <div className="pointer-events-none absolute -right-8 -bottom-8 h-40 w-40 rounded-full bg-blue-200/30 blur-2xl transition-all group-hover:bg-blue-300/40" />
           </div>
 
-          {/* Card 2 – wide */}
           <div className="group relative col-span-1 overflow-hidden rounded-3xl border border-slate-200/60 bg-linear-to-br from-violet-50 to-white p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-100/40 md:col-span-2">
             <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-100 text-violet-600 transition-colors group-hover:bg-violet-600 group-hover:text-white">
               <svg
@@ -128,7 +126,6 @@ export default async function Home() {
             </p>
           </div>
 
-          {/* Card 3 */}
           <div className="group relative overflow-hidden rounded-3xl border border-slate-200/60 bg-linear-to-br from-amber-50 to-white p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-amber-100/40">
             <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-600 transition-colors group-hover:bg-amber-600 group-hover:text-white">
               <svg
@@ -153,7 +150,6 @@ export default async function Home() {
             </p>
           </div>
 
-          {/* Card 4 */}
           <div className="group relative overflow-hidden rounded-3xl border border-slate-200/60 bg-linear-to-br from-emerald-50 to-white p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-100/40">
             <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600 transition-colors group-hover:bg-emerald-600 group-hover:text-white">
               <svg
@@ -179,7 +175,6 @@ export default async function Home() {
             </p>
           </div>
 
-          {/* Card 5 – wide */}
           <div className="group relative col-span-1 overflow-hidden rounded-3xl border border-slate-200/60 bg-linear-to-br from-rose-50 to-white p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-rose-100/40 md:col-span-2">
             <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-100 text-rose-600 transition-colors group-hover:bg-rose-600 group-hover:text-white">
               <svg
@@ -205,7 +200,6 @@ export default async function Home() {
             </p>
           </div>
 
-          {/* Card 6 */}
           <div className="group relative overflow-hidden rounded-3xl border border-slate-200/60 bg-linear-to-br from-cyan-50 to-white p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-cyan-100/40">
             <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-100 text-cyan-600 transition-colors group-hover:bg-cyan-600 group-hover:text-white">
               <svg
