@@ -39,7 +39,7 @@ const Navbar = () => (
           </Link>
         </SignedOut>
         <SignedIn>
-          <UserButton afterSignOutUrl="/" />
+          <UserButton />
         </SignedIn>
       </div>
     </div>
