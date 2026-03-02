@@ -1,3 +1,4 @@
+// src/server/api/routers/waitlist.ts
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { waitlist } from "~/server/db/schema";
@@ -13,10 +14,11 @@ export const waitlistRouter = createTRPCRouter({
 
         return { success: true, alreadyExists: false };
       } catch (error) {
-        const isUniqueViolation =
-          error instanceof Error && 
-          (error.message.includes("unique constraint") || 
-           (error as any).code === "23505");
+        const pgError = error as { code?: string; message?: string };
+        
+        const isUniqueViolation = 
+          pgError.code === "23505" || 
+          pgError.message?.includes("unique constraint");
 
         if (isUniqueViolation) {
           return { success: true, alreadyExists: true };
