@@ -1,4 +1,7 @@
+import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import Link from "next/link";
 import { HydrateClient } from "~/trpc/server";
+import { WaitlistForm } from "./_components/waitlist-form";
 
 const Navbar = () => (
   <nav className="fixed top-0 right-0 left-0 z-50 flex justify-center p-4">
@@ -23,12 +26,21 @@ const Navbar = () => (
 
       {/* Actions */}
       <div className="ml-auto flex items-center gap-4">
-        <button className="font-body text-sm font-semibold text-slate-900 hover:text-slate-600">
-          Login
-        </button>
-        <button className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition-all hover:bg-black active:scale-95">
-          Starten
-        </button>
+        <SignedOut>
+          <Link href="/sign-in">
+            <button className="font-body text-sm font-semibold text-slate-900 hover:text-slate-600">
+              Login
+            </button>
+          </Link>
+          <Link href="/sign-up">
+            <button className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition-all hover:bg-black active:scale-95">
+              Kostenlos starten
+            </button>
+          </Link>
+        </SignedOut>
+        <SignedIn>
+          <UserButton afterSignOutUrl="/" />
+        </SignedIn>
       </div>
     </div>
   </nav>
@@ -50,13 +62,21 @@ export default async function Home() {
           Erstelle in Sekunden eine wunderschöne Landingpage für deine Links und
           Socials. Komplett anpassbar, extrem schnell.
         </p>
-        <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-          <button className="rounded-full bg-slate-900 px-8 py-4 font-semibold text-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all hover:scale-105 hover:bg-black active:scale-95">
-            Kostenlos starten
-          </button>
-          <button className="rounded-full border border-slate-200 bg-white px-8 py-4 text-slate-600 hover:border-slate-300 hover:bg-slate-50">
-            Demo ansehen
-          </button>
+
+        <WaitlistForm />
+
+        <div className="mt-8 flex items-center gap-2">
+          <div className="flex -space-x-2">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="h-8 w-8 rounded-full border-2 border-white bg-slate-200"
+              />
+            ))}
+          </div>
+          <p className="text-xs font-medium tracking-widest text-slate-400 uppercase">
+            +420 Creator warten bereits
+          </p>
         </div>
       </section>
 
