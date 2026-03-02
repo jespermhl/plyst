@@ -6,9 +6,10 @@ export const waitlistRouter = createTRPCRouter({
   join: publicProcedure
     .input(z.object({ email: z.string().email() }))
     .mutation(async ({ ctx, input }) => {
+      const normalizedEmail = input.email.trim().toLowerCase();
       try {
         await ctx.db.insert(waitlist).values({
-          email: input.email,
+          email: normalizedEmail,
         });
 
         return { success: true, alreadyExists: false };
