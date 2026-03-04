@@ -1,5 +1,5 @@
 import { eq, and, asc } from "drizzle-orm";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { blocks, profiles } from "~/server/db/schema";
 import z from "zod";
 import { TRPCError } from "@trpc/server";
@@ -98,5 +98,22 @@ export const blockRouter = createTRPCRouter({
         ),
       );
       return { success: true };
+    }),
+
+  getPublicProfile: publicProcedure
+    .input(z.object({ handle: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const profile = await ctx.db.query.profiles.findFirst({
+        where: eq(profiles.handle, input.handle),
+      });
+
+      if (!profile) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const profileBlocks = await ctx.db.query.blocks.findMany({
+        where: eq(blocks.profileId, profile.id),
+        orderBy: [asc(blocks.order)],
+      });
+
+      return { profile, blocks: profileBlocks };
     }),
 });
