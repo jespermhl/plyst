@@ -1,69 +1,101 @@
-import { UserButton } from "@clerk/nextjs";
+"use client";
+
+import { api } from "~/trpc/react";
 
 export default function DashboardPage() {
-  return (
-    // Der Haupt-Hintergrund der gesamten App
-    <div className="font-body min-h-screen bg-slate-50">
-      {/* 1. DIE NAVBAR */}
-      <nav className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-white px-8">
-        <div className="font-display text-xl font-black tracking-tighter text-slate-900">
-          Plyst<span className="text-blue-600">.</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-medium text-slate-500">Dashboard</span>
-          <UserButton afterSignOutUrl="/" />
-        </div>
-      </nav>
+  const utils = api.useUtils();
 
-      {/* 2. DAS HAUPT-LAYOUT */}
-      <main className="mx-auto grid max-w-7xl grid-cols-1 gap-10 p-6 lg:grid-cols-[1fr_400px]">
-        {/* LINKE SPALTE: HIER PASSIERT DIE ARBEIT */}
+  const { data: blocks, isLoading } = api.block.getAll.useQuery();
+
+  const addBlock = api.block.add.useMutation({
+    onSuccess: () => {
+      void utils.block.getAll.invalidate();
+    },
+  });
+
+  return (
+    <div className="font-body min-h-screen bg-[#fafafa] text-slate-900">
+      <main className="mx-auto grid max-w-7xl grid-cols-1 gap-12 p-6 lg:grid-cols-[1fr_400px]">
         <div className="flex flex-col gap-8">
-          {/* Header Bereich im Editor */}
-          <div className="flex items-end justify-between">
-            <div>
-              <h1 className="font-display text-3xl font-bold text-slate-900">
-                Editor
-              </h1>
-              <p className="text-sm text-slate-500">
-                Verwalte deine Links und Blöcke
-              </p>
-            </div>
-            {/* Ein simpler Status-Indikator */}
-            <div className="text-[10px] font-bold tracking-widest text-emerald-500 uppercase">
-              Live am Netz
-            </div>
+          <div>
+            <h1 className="font-display text-4xl font-bold tracking-tight">
+              Editor
+            </h1>
+            <p className="mt-2 text-slate-500">
+              Erstelle und verwalte deine Profil-Blöcke.
+            </p>
           </div>
 
-          {/* DER "ADD BLOCK" BUTTON */}
-          <button className="flex w-full items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 p-4 font-semibold text-slate-400 transition-all hover:border-blue-400 hover:text-blue-600">
-            + Neuen Block hinzufügen
+          <button
+            onClick={() => addBlock.mutate({ type: "link" })}
+            disabled={addBlock.isPending}
+            className="group flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-200 p-6 transition-all hover:border-blue-400 hover:bg-blue-50/50"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 transition-colors group-hover:bg-blue-600 group-hover:text-white">
+              <span className="text-2xl">+</span>
+            </div>
+            <span className="font-bold text-slate-400 group-hover:text-blue-600">
+              {addBlock.isPending
+                ? "Wird erstellt..."
+                : "Neuen Link hinzufügen"}
+            </span>
           </button>
 
-          {/* PLATZHALTER FÜR DIE BLÖCKE */}
           <div className="flex flex-col gap-4">
-            {/* Hier bauen wir gleich die erste "Block-Komponente" */}
+            {isLoading && (
+              <p className="py-10 text-center text-slate-400">
+                Lade deine Blöcke...
+              </p>
+            )}
+
+            {blocks?.map((block) => (
+              <div
+                key={block.id}
+                className="group relative flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-md"
+              >
+                <div className="text-[10px] font-bold tracking-widest text-blue-600 uppercase">
+                  {block.type}
+                </div>
+
+                <div className="space-y-2">
+                  <input
+                    className="font-display w-full text-xl font-bold outline-none placeholder:text-slate-200"
+                    defaultValue={block.title ?? ""}
+                    placeholder="Titel des Links"
+                  />
+                  <input
+                    className="font-body w-full text-sm text-slate-400 outline-none placeholder:text-slate-200"
+                    defaultValue={block.url ?? ""}
+                    placeholder="https://deine-url.de"
+                  />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* RECHTE SPALTE: DIE HANDY-PREVIEW */}
         <aside className="hidden lg:block">
           <div className="sticky top-24 flex flex-col items-center">
-            {/* Das Handy Gehäuse */}
             <div className="relative h-[680px] w-[340px] overflow-hidden rounded-[3rem] border-10 border-slate-900 bg-white shadow-2xl">
-              {/* Die "Notch" des Handys */}
               <div className="absolute top-0 left-1/2 h-6 w-32 -translate-x-1/2 rounded-b-2xl bg-slate-900"></div>
 
-              {/* Der tatsächliche Content im Handy */}
-              <div className="h-full w-full p-4 pt-12">
-                <div className="flex flex-col items-center">
-                  <div className="mb-4 h-20 w-20 rounded-full bg-slate-100" />
-                  <div className="mb-2 h-4 w-32 rounded-full bg-slate-100" />
-                  <div className="h-2 w-20 rounded-full bg-slate-50" />
+              <div className="h-full w-full p-6 pt-16 text-center">
+                <div className="mx-auto mb-4 h-20 w-20 rounded-full bg-slate-100" />
+                <div className="mx-auto mb-2 h-4 w-32 rounded-full bg-slate-100" />
+
+                <div className="mt-10 space-y-3">
+                  {blocks?.map((block) => (
+                    <div
+                      key={block.id}
+                      className="w-full rounded-xl border border-slate-100 py-3 text-sm font-bold shadow-sm"
+                    >
+                      {block.title || "Unbenannt"}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
-            <p className="mt-6 text-[11px] font-medium tracking-widest text-slate-400 uppercase">
+            <p className="mt-6 text-[11px] font-bold tracking-[0.2em] text-slate-400 uppercase">
               Live Preview
             </p>
           </div>
