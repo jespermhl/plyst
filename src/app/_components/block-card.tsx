@@ -1,9 +1,13 @@
 "use client";
 
+import { useSortable } from "@dnd-kit/sortable";
 import { useState, useEffect } from "react";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
+import { CSS } from "@dnd-kit/utilities";
 
-export function BlockCard({ block }: { block: any }) {
+type Block = RouterOutputs["block"]["getAll"][number];
+
+export function BlockCard({ block }: { block: Block }) {
   const utils = api.useUtils();
   const [title, setTitle] = useState(block.title ?? "");
   const [url, setUrl] = useState(block.url ?? "");
@@ -44,12 +48,56 @@ export function BlockCard({ block }: { block: any }) {
       }
     }, 800);
     return () => clearTimeout(timer);
-  }, [title, url, block.id]);
+  }, [title, url, block.id, block.title, block.url, update]);
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: block.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 40 : 1, // Drag-Effekt
+    opacity: isDragging ? 0.5 : 1,
+  };
 
   return (
-    <div className="group relative flex flex-col gap-5 rounded-4xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:border-blue-200 hover:shadow-md">
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      className="group relative flex flex-col gap-5 rounded-4xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:border-blue-200 hover:shadow-md"
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
+          <div
+            {...listeners}
+            className="-ml-1 flex cursor-grab p-1 text-slate-300 transition-colors hover:text-slate-500 active:cursor-grabbing"
+            aria-label="Drag handle"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="9" cy="5" r="1" />
+              <circle cx="9" cy="12" r="1" />
+              <circle cx="9" cy="19" r="1" />
+              <circle cx="15" cy="5" r="1" />
+              <circle cx="15" cy="12" r="1" />
+              <circle cx="15" cy="19" r="1" />
+            </svg>
+          </div>
           <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500" />
           <span className="text-[10px] font-black tracking-[0.15em] text-slate-400 uppercase">
             {block.type}

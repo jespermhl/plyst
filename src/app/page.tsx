@@ -1,4 +1,4 @@
-import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { SignedIn, SignedOut } from "@clerk/nextjs";
 import Link from "next/link";
 import { HydrateClient } from "~/trpc/server";
 import { WaitlistForm } from "./_components/waitlist-form";
