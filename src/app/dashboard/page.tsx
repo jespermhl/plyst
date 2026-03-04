@@ -63,13 +63,24 @@ export default function DashboardPage() {
           </button>
 
           <div className="flex flex-col gap-4">
-            {isLoading && (
-              <p className="py-10 text-center text-slate-400">Lade...</p>
+            {isLoading ? (
+              <>
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="h-[140px] w-full animate-pulse rounded-[2.5rem] border border-slate-100 bg-white/50 shadow-sm"
+                  >
+                    <div className="flex flex-col gap-4 p-8">
+                      <div className="h-2 w-12 rounded-full bg-slate-100" />
+                      <div className="h-6 w-1/2 rounded-lg bg-slate-100" />
+                      <div className="h-10 w-full rounded-2xl bg-slate-50" />
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              blocks?.map((block) => <BlockCard key={block.id} block={block} />)
             )}
-
-            {blocks?.map((block) => (
-              <BlockCard key={block.id} block={block} />
-            ))}
           </div>
         </div>
 
