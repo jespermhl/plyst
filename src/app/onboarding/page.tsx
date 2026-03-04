@@ -10,7 +10,6 @@ export default function OnboardingPage() {
   const [debouncedHandle, setDebouncedHandle] = useState("");
   const router = useRouter();
 
-  // Wartet 500ms nach dem Tippen, um die DB nicht zu stressen
   useEffect(() => {
     const timer = setTimeout(() => {
       if (handle.length >= 2) setDebouncedHandle(handle);
@@ -18,13 +17,11 @@ export default function OnboardingPage() {
     return () => clearTimeout(timer);
   }, [handle]);
 
-  // tRPC: Prüfen ob Name frei ist
   const { data: checkData, isLoading } = api.profile.checkHandle.useQuery(
     { handle: debouncedHandle },
     { enabled: debouncedHandle.length >= 2 },
   );
 
-  // tRPC: Profil final erstellen
   const createProfile = api.profile.create.useMutation({
     onSuccess: () => {
       router.push("/dashboard");
