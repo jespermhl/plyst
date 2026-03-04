@@ -1,7 +1,9 @@
 "use client";
 
+import { useSortable } from "@dnd-kit/sortable";
 import { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
+import { CSS } from "@dnd-kit/utilities";
 
 export function BlockCard({ block }: { block: any }) {
   const utils = api.useUtils();
@@ -46,8 +48,30 @@ export function BlockCard({ block }: { block: any }) {
     return () => clearTimeout(timer);
   }, [title, url, block.id]);
 
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: block.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 40 : 1, // Drag-Effekt
+    opacity: isDragging ? 0.5 : 1,
+  };
+
   return (
-    <div className="group relative flex flex-col gap-5 rounded-4xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:border-blue-200 hover:shadow-md">
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="group relative flex flex-col gap-5 rounded-4xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:border-blue-200 hover:shadow-md"
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500" />
