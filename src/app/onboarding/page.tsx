@@ -25,6 +25,7 @@ export default function OnboardingPage() {
   const createProfile = api.profile.create.useMutation({
     onSuccess: () => {
       router.push("/dashboard");
+      router.refresh();
     },
     onError: (err) => {
       alert("Fehler: " + err.message);
