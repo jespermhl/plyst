@@ -1,15 +1,15 @@
 /** @type {import('tailwindcss').Config} */
-export default {
-    content: [
-        "./src/**/*.{js,ts,jsx,tsx,mdx}",
-    ],
-    theme: {
-        extend: {
-            fontFamily: {
-                display: ["var(--font-bricolage)", "sans-serif"],
-                sans: ["var(--font-urbanist)", "sans-serif"],
-            },
-        },
+const config = {
+  content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
+  theme: {
+    extend: {
+      fontFamily: {
+        display: ["var(--font-bricolage)", "sans-serif"],
+        body: ["var(--font-urbanist)", "sans-serif"],
+        sans: ["var(--font-urbanist)", "sans-serif"],
+      },
     },
-    plugins: [],
-}
+  },
+  plugins: [],
+};
+export default config;
