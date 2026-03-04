@@ -6,7 +6,7 @@ import { TRPCError } from "@trpc/server";
 
 export const blockRouter = createTRPCRouter({
   getAll: protectedProcedure.query(async ({ ctx }) => {
-    const userId = ctx.auth.userId as string;
+    const userId = ctx.auth.userId!;
 
     const profile = await ctx.db.query.profiles.findFirst({
       where: eq(profiles.clerkId, userId),
@@ -23,7 +23,7 @@ export const blockRouter = createTRPCRouter({
   add: protectedProcedure
     .input(z.object({ type: z.string().default("link") }))
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId as string;
+      const userId = ctx.auth.userId!;
 
       const profile = await ctx.db.query.profiles.findFirst({
         where: eq(profiles.clerkId, userId),
@@ -58,7 +58,7 @@ export const blockRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
-      const userId = ctx.auth.userId as string;
+      const userId = ctx.auth.userId!;
 
       const profile = await ctx.db.query.profiles.findFirst({
         where: eq(profiles.clerkId, userId),
@@ -74,7 +74,7 @@ export const blockRouter = createTRPCRouter({
   delete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId as string;
+      const userId = ctx.auth.userId!;
 
       const profile = await ctx.db.query.profiles.findFirst({
         where: eq(profiles.clerkId, userId),

@@ -26,7 +26,7 @@ export const profileRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const client = await clerkClient();
 
-      const userId = ctx.auth.userId as string;
+      const userId = ctx.auth.userId!;
 
       const newProfileRows = await ctx.db
         .insert(profiles)

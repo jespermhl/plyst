@@ -8,7 +8,11 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  type DragEndEvent,
 } from "@dnd-kit/core";
+import { type RouterOutputs } from "~/trpc/react";
+
+type Block = RouterOutputs["block"]["getAll"][number];
 import {
   arrayMove,
   SortableContext,
@@ -33,7 +37,7 @@ export function DashboardContent() {
           url: "",
           type: "link",
           order: old?.length ?? 0,
-        } as any,
+        } as Block,
         ...(old ?? []),
       ]);
 
@@ -48,15 +52,41 @@ export function DashboardContent() {
   });
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
 
-  const reorderMutation = api.block.reorder.useMutation();
+  const reorderMutation = api.block.reorder.useMutation({
+    onMutate: async (newOrderItems) => {
+      await utils.block.getAll.cancel();
+      const previousBlocks = utils.block.getAll.getData();
 
-  function handleDragEnd(event: any) {
+      if (previousBlocks) {
+        const itemMap = new Map(previousBlocks.map((b) => [b.id, b]));
+        const newOrder = newOrderItems
+          .map((item) => itemMap.get(item.id))
+          .filter(Boolean) as Block[];
+        utils.block.getAll.setData(undefined, newOrder);
+      }
+
+      return { previousBlocks };
+    },
+    onError: (err, newOrderItems, context) => {
+      utils.block.getAll.setData(undefined, context?.previousBlocks);
+      alert("Fehler beim Sortieren.");
+    },
+    onSettled: () => {
+      void utils.block.getAll.invalidate();
+    },
+  });
+
+  function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
 
     if (!over || !blocks) return;
@@ -68,7 +98,6 @@ export function DashboardContent() {
       if (oldIndex !== -1 && newIndex !== -1) {
         const newOrder = arrayMove(blocks, oldIndex, newIndex);
 
-        utils.block.getAll.setData(undefined, newOrder);
         reorderMutation.mutate(
           newOrder.map((b, index) => ({ id: b.id, order: index })),
         );
@@ -150,7 +179,7 @@ export function DashboardContent() {
                       key={block.id}
                       className="w-full rounded-2xl border border-slate-100 bg-white px-4 py-4 text-center text-sm font-bold shadow-sm transition-all hover:scale-[1.02]"
                     >
-                      {block.title || "Unbenannt"}
+                      {block.title ?? "Unbenannt"}
                     </div>
                   ))}
                 </div>
