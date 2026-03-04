@@ -1,6 +1,7 @@
 "use client";
 
 import { api } from "~/trpc/react";
+import { BlockCard } from "../_components/block-card";
 
 export default function DashboardPage() {
   const utils = api.useUtils();
@@ -8,7 +9,27 @@ export default function DashboardPage() {
   const { data: blocks, isLoading } = api.block.getAll.useQuery();
 
   const addBlock = api.block.add.useMutation({
-    onSuccess: () => {
+    onMutate: async () => {
+      await utils.block.getAll.cancel();
+      const previousBlocks = utils.block.getAll.getData();
+
+      utils.block.getAll.setData(undefined, (old) => [
+        {
+          id: crypto.randomUUID(),
+          title: "Neuer Link",
+          url: "",
+          type: "link",
+          order: old?.length ?? 0,
+        } as any,
+        ...(old ?? []),
+      ]);
+
+      return { previousBlocks };
+    },
+    onError: (err, newBlock, context) => {
+      utils.block.getAll.setData(undefined, context?.previousBlocks);
+    },
+    onSettled: () => {
       void utils.block.getAll.invalidate();
     },
   });
@@ -43,61 +64,51 @@ export default function DashboardPage() {
 
           <div className="flex flex-col gap-4">
             {isLoading && (
-              <p className="py-10 text-center text-slate-400">
-                Lade deine Blöcke...
-              </p>
+              <p className="py-10 text-center text-slate-400">Lade...</p>
             )}
 
             {blocks?.map((block) => (
-              <div
-                key={block.id}
-                className="group relative flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-md"
-              >
-                <div className="text-[10px] font-bold tracking-widest text-blue-600 uppercase">
-                  {block.type}
-                </div>
-
-                <div className="space-y-2">
-                  <input
-                    className="font-display w-full text-xl font-bold outline-none placeholder:text-slate-200"
-                    defaultValue={block.title ?? ""}
-                    placeholder="Titel des Links"
-                  />
-                  <input
-                    className="font-body w-full text-sm text-slate-400 outline-none placeholder:text-slate-200"
-                    defaultValue={block.url ?? ""}
-                    placeholder="https://deine-url.de"
-                  />
-                </div>
-              </div>
+              <BlockCard key={block.id} block={block} />
             ))}
           </div>
         </div>
 
         <aside className="hidden lg:block">
-          <div className="sticky top-24 flex flex-col items-center">
-            <div className="relative h-[680px] w-[340px] overflow-hidden rounded-[3rem] border-10 border-slate-900 bg-white shadow-2xl">
-              <div className="absolute top-0 left-1/2 h-6 w-32 -translate-x-1/2 rounded-b-2xl bg-slate-900"></div>
+          <div className="sticky top-12 flex flex-col items-center">
+            <div className="relative h-[720px] w-[350px] overflow-hidden rounded-[3.5rem] border-12 border-slate-900 bg-white shadow-2xl">
+              <div className="absolute top-0 left-1/2 z-20 h-7 w-36 -translate-x-1/2 rounded-b-3xl bg-slate-900" />
 
-              <div className="h-full w-full p-6 pt-16 text-center">
-                <div className="mx-auto mb-4 h-20 w-20 rounded-full bg-slate-100" />
-                <div className="mx-auto mb-2 h-4 w-32 rounded-full bg-slate-100" />
+              <div className="custom-scrollbar h-full w-full overflow-y-auto px-6 pt-24 pb-12 text-center">
+                <div className="mx-auto mb-4 h-24 w-24 shrink-0 rounded-full border-[3px] border-blue-500/10 p-1.5 shadow-sm">
+                  <div className="h-full w-full rounded-full bg-slate-100 shadow-inner" />
+                </div>
 
-                <div className="mt-10 space-y-3">
+                <div className="mx-auto mb-2 h-4 w-32 shrink-0 rounded-full bg-slate-100" />
+                <div className="mx-auto mb-10 h-3 w-40 shrink-0 rounded-full bg-slate-50" />
+
+                <div className="w-full space-y-3">
                   {blocks?.map((block) => (
                     <div
                       key={block.id}
-                      className="w-full rounded-xl border border-slate-100 py-3 text-sm font-bold shadow-sm"
+                      className="w-full rounded-2xl border border-slate-100 bg-white px-4 py-4 text-center text-sm font-bold shadow-sm transition-all hover:scale-[1.02]"
                     >
                       {block.title || "Unbenannt"}
                     </div>
                   ))}
                 </div>
+
+                <div className="mt-10 shrink-0 pb-4">
+                  <p className="font-display text-[10px] font-black tracking-widest text-slate-200">
+                    PLYST.CC
+                  </p>
+                </div>
               </div>
             </div>
-            <p className="mt-6 text-[11px] font-bold tracking-[0.2em] text-slate-400 uppercase">
-              Live Preview
-            </p>
+
+            <div className="mt-8 flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-[10px] font-bold tracking-widest text-white uppercase shadow-lg">
+              <div className="h-2 w-2 animate-pulse rounded-full bg-green-400" />
+              Live Vorschau
+            </div>
           </div>
         </aside>
       </main>

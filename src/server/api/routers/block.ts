@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { eq, and, asc } from "drizzle-orm";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { blocks, profiles } from "~/server/db/schema";
 import z from "zod";
@@ -14,11 +14,10 @@ export const blockRouter = createTRPCRouter({
 
     if (!profile) return [];
 
-    return await ctx.db
-      .select()
-      .from(blocks)
-      .where(eq(blocks.profileId, profile.id))
-      .orderBy(desc(blocks.order));
+    return await ctx.db.query.blocks.findMany({
+      where: eq(blocks.profileId, profile.id),
+      orderBy: [asc(blocks.order)],
+    });
   }),
 
   add: protectedProcedure
@@ -32,11 +31,72 @@ export const blockRouter = createTRPCRouter({
 
       if (!profile) throw new TRPCError({ code: "NOT_FOUND" });
 
-      return await ctx.db.insert(blocks).values({
-        profileId: profile.id,
-        type: input.type,
-        title: "Neuer Link",
-        url: "",
+      const existingBlocks = await ctx.db.query.blocks.findMany({
+        where: eq(blocks.profileId, profile.id),
       });
+
+      return await ctx.db
+        .insert(blocks)
+        .values({
+          profileId: profile.id,
+          type: input.type,
+          title: "Neuer Link",
+          url: "",
+          order: existingBlocks.length,
+        })
+        .returning();
+    }),
+
+  update: protectedProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        title: z.string().optional(),
+        url: z.string().optional(),
+        config: z.any().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...data } = input;
+      const userId = ctx.auth.userId as string;
+
+      const profile = await ctx.db.query.profiles.findFirst({
+        where: eq(profiles.clerkId, userId),
+      });
+      if (!profile) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+      return await ctx.db
+        .update(blocks)
+        .set(data)
+        .where(and(eq(blocks.id, id), eq(blocks.profileId, profile.id)));
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.auth.userId as string;
+
+      const profile = await ctx.db.query.profiles.findFirst({
+        where: eq(profiles.clerkId, userId),
+      });
+      if (!profile) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+      return await ctx.db
+        .delete(blocks)
+        .where(and(eq(blocks.id, input.id), eq(blocks.profileId, profile.id)));
+    }),
+
+  reorder: protectedProcedure
+    .input(z.array(z.object({ id: z.string(), order: z.number() })))
+    .mutation(async ({ ctx, input }) => {
+      await Promise.all(
+        input.map((item) =>
+          ctx.db
+            .update(blocks)
+            .set({ order: item.order })
+            .where(eq(blocks.id, item.id)),
+        ),
+      );
+      return { success: true };
     }),
 });

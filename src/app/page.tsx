@@ -6,12 +6,10 @@ import { WaitlistForm } from "./_components/waitlist-form";
 const Navbar = () => (
   <nav className="fixed top-0 right-0 left-0 z-50 flex justify-center p-4">
     <div className="flex h-16 w-full max-w-7xl items-center rounded-2xl border border-slate-200/50 bg-white/70 px-6 shadow-sm backdrop-blur-xl">
-      {/* Logo */}
       <div className="font-display text-xl font-black tracking-tight text-slate-900">
         Plyst<span className="text-blue-600">.</span>
       </div>
 
-      {/* Links (Desktop) */}
       <div className="ml-10 hidden gap-8 md:flex">
         {["Features", "Preise", "Showcase"].map((item) => (
           <a
@@ -24,7 +22,6 @@ const Navbar = () => (
         ))}
       </div>
 
-      {/* Actions */}
       <div className="ml-auto flex items-center gap-4">
         <SignedOut>
           <Link href="/sign-in">
@@ -39,7 +36,11 @@ const Navbar = () => (
           </Link>
         </SignedOut>
         <SignedIn>
-          <UserButton />
+          <Link href="/dashboard">
+            <button className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition-all hover:bg-black active:scale-95">
+              Dashboard
+            </button>
+          </Link>
         </SignedIn>
       </div>
     </div>
