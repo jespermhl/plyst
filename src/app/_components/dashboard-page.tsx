@@ -1,4 +1,5 @@
 "use client";
+
 import { api } from "~/trpc/react";
 import { BlockCard } from "./block-card";
 import {
@@ -11,9 +12,8 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { type RouterOutputs } from "~/trpc/react";
-import { useEffect, useRef } from "react";
-
-type Block = RouterOutputs["block"]["getAll"][number];
+import { useEffect, useRef, useState } from "react";
+import { DashboardSettingsPanel } from "./dashboard-settings";
 import {
   arrayMove,
   SortableContext,
@@ -21,7 +21,15 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 
-export function DashboardContent() {
+type Block = RouterOutputs["block"]["getAll"][number];
+
+type DashboardContentProps = {
+  initialTab?: "editor" | "settings";
+};
+
+export function DashboardContent({
+  initialTab = "editor",
+}: DashboardContentProps) {
   const utils = api.useUtils();
 
   const { data: blocks, isLoading } = api.block.getAll.useQuery();
@@ -32,14 +40,12 @@ export function DashboardContent() {
 
   const createAttemptedRef = useRef(false);
 
-  // Wir wollen nur einmal initial ein Profil anlegen, falls keins existiert.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!isProfileLoading && !profile && !createAttemptedRef.current) {
       createProfile.mutate();
       createAttemptedRef.current = true;
     }
-  }, [profile, isProfileLoading]);
+  }, [profile, isProfileLoading, createProfile]);
 
   const addBlock = api.block.add.useMutation({
     onMutate: async () => {
@@ -59,13 +65,15 @@ export function DashboardContent() {
 
       return { previousBlocks };
     },
-    onError: (err, newBlock, context) => {
+    onError: (_err, _newBlock, context) => {
       utils.block.getAll.setData(undefined, context?.previousBlocks);
     },
     onSettled: () => {
       void utils.block.getAll.invalidate();
     },
   });
+
+  const [activeTab, setActiveTab] = useState<"editor" | "settings">(initialTab);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -93,7 +101,7 @@ export function DashboardContent() {
 
       return { previousBlocks };
     },
-    onError: (err, newOrderItems, context) => {
+    onError: (_err, _newOrderItems, context) => {
       utils.block.getAll.setData(undefined, context?.previousBlocks);
       alert("Fehler beim Sortieren.");
     },
@@ -125,55 +133,89 @@ export function DashboardContent() {
     <div className="font-body min-h-screen bg-[#fafafa] text-slate-900">
       <main className="mx-auto grid max-w-7xl grid-cols-1 gap-12 p-6 lg:grid-cols-[1fr_400px]">
         <div className="flex flex-col gap-8">
-          <div>
-            <h1 className="font-display text-4xl font-bold tracking-tight">
-              Editor
-            </h1>
-            <p className="mt-2 text-slate-500">
-              Erstelle und verwalte deine Profil-Blöcke.
-            </p>
-          </div>
-
-          <button
-            onClick={() => addBlock.mutate({ type: "link" })}
-            disabled={addBlock.isPending}
-            className="group flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-200 p-6 transition-all hover:border-blue-400 hover:bg-blue-50/50"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 transition-colors group-hover:bg-blue-600 group-hover:text-white">
-              <span className="text-2xl">+</span>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="font-display text-4xl font-bold tracking-tight">
+                {activeTab === "editor" ? "Editor" : "Einstellungen"}
+              </h1>
+              <p className="mt-2 text-slate-500">
+                {activeTab === "editor"
+                  ? "Erstelle und verwalte deine Profil-Blöcke."
+                  : "Passe dein öffentliches Profil und deinen Account an."}
+              </p>
             </div>
-            <span className="font-bold text-slate-400 group-hover:text-blue-600">
-              {addBlock.isPending
-                ? "Wird erstellt..."
-                : "Neuen Link hinzufügen"}
-            </span>
-          </button>
-
-          <div className="flex flex-col gap-4">
-            {isLoading ? (
-              [1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="h-32 w-full animate-pulse rounded-[2.5rem] bg-white shadow-sm"
-                />
-              ))
-            ) : (
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
+            <div className="mt-2 inline-flex shrink-0 items-center rounded-full bg-slate-100 p-1 text-xs font-bold text-slate-500">
+              <button
+                type="button"
+                onClick={() => setActiveTab("editor")}
+                className={`rounded-full px-4 py-1.5 transition-all ${
+                  activeTab === "editor"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500 hover:text-slate-900"
+                }`}
               >
-                <SortableContext
-                  items={blocks?.map((b) => b.id) ?? []}
-                  strategy={verticalListSortingStrategy}
-                >
-                  {blocks?.map((block) => (
-                    <BlockCard key={block.id} block={block} />
-                  ))}
-                </SortableContext>
-              </DndContext>
-            )}
+                Editor
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("settings")}
+                className={`rounded-full px-4 py-1.5 transition-all ${
+                  activeTab === "settings"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                Einstellungen
+              </button>
+            </div>
           </div>
+
+          {activeTab === "editor" ? (
+            <>
+              <button
+                onClick={() => addBlock.mutate({ type: "link" })}
+                disabled={addBlock.isPending}
+                className="group flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-200 p-6 transition-all hover:border-blue-400 hover:bg-blue-50/50"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 transition-colors group-hover:bg-blue-600 group-hover:text-white">
+                  <span className="text-2xl">+</span>
+                </div>
+                <span className="font-bold text-slate-400 group-hover:text-blue-600">
+                  {addBlock.isPending
+                    ? "Wird erstellt..."
+                    : "Neuen Link hinzufügen"}
+                </span>
+              </button>
+
+              <div className="flex flex-col gap-4">
+                {isLoading ? (
+                  [1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="h-32 w-full animate-pulse rounded-[2.5rem] bg-white shadow-sm"
+                    />
+                  ))
+                ) : (
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <SortableContext
+                      items={blocks?.map((b) => b.id) ?? []}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {blocks?.map((block) => (
+                        <BlockCard key={block.id} block={block} />
+                      ))}
+                    </SortableContext>
+                  </DndContext>
+                )}
+              </div>
+            </>
+          ) : (
+            <DashboardSettingsPanel />
+          )}
         </div>
 
         <aside className="hidden lg:block">
@@ -218,3 +260,4 @@ export function DashboardContent() {
     </div>
   );
 }
+
