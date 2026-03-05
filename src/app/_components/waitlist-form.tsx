@@ -1,35 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import { api } from "~/trpc/react";
+import { useWaitlist } from "@clerk/nextjs";
 
 export function WaitlistForm() {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<
-    "idle" | "loading" | "success" | "error"
-  >("idle");
+  const { waitlist, errors, fetchStatus } = useWaitlist();
+  const [localStatus, setLocalStatus] = useState<"idle" | "success">("idle");
 
-  const joinMutation = api.waitlist.join.useMutation({
-    onMutate: () => setStatus("loading"),
-    onSuccess: () => setStatus("success"),
-    onError: (error) => {
-      if (
-        error.message.includes("unique constraint") ||
-        error.data?.code === "CONFLICT"
-      ) {
-        setStatus("success");
-      } else {
-        setStatus("error");
-      }
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    joinMutation.mutate({ email });
+
+    const { error } = await waitlist.join({ emailAddress: email });
+
+    if (error) {
+      console.error("Failed to join waitlist:", error);
+    } else {
+      setLocalStatus("success");
+    }
   };
 
-  if (status === "success") {
+  if (waitlist.id || localStatus === "success") {
     return (
       <div className="animate-in fade-in zoom-in mt-10 flex flex-col items-center duration-500">
         <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 px-6 py-4">
@@ -61,16 +52,16 @@ export function WaitlistForm() {
         />
         <button
           type="submit"
-          disabled={status === "loading"}
+          disabled={fetchStatus === "fetching"}
           className="absolute right-2 rounded-full bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-black active:scale-95 disabled:opacity-50"
         >
-          {status === "loading" ? "..." : "Warteliste beitreten"}
+          {fetchStatus === "fetching" ? "..." : "Warteliste beitreten"}
         </button>
       </form>
 
-      {status === "error" && (
+      {errors.fields.emailAddress && (
         <p className="mt-2 text-center text-xs font-medium text-red-500">
-          Fehler beim Eintragen. Versuche es später erneut.
+          {errors.fields.emailAddress.longMessage}
         </p>
       )}
 
