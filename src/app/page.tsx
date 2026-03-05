@@ -1,4 +1,4 @@
-import { SignedIn, SignedOut } from "@clerk/nextjs";
+import { Show } from "@clerk/nextjs";
 import Link from "next/link";
 import { HydrateClient } from "~/trpc/server";
 import { WaitlistForm } from "./_components/waitlist-form";
@@ -23,7 +23,7 @@ const Navbar = () => (
       </div>
 
       <div className="ml-auto flex items-center gap-4">
-        <SignedOut>
+        <Show when="signed-out">
           <Link href="/sign-in">
             <button className="font-body text-sm font-semibold text-slate-900 hover:text-slate-600">
               Login
@@ -34,14 +34,14 @@ const Navbar = () => (
               Kostenlos starten
             </button>
           </Link>
-        </SignedOut>
-        <SignedIn>
+        </Show>
+        <Show when="signed-in">
           <Link href="/dashboard">
             <button className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition-all hover:bg-black active:scale-95">
               Dashboard
             </button>
           </Link>
-        </SignedIn>
+        </Show>
       </div>
     </div>
   </nav>
