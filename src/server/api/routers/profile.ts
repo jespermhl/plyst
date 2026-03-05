@@ -28,12 +28,13 @@ export const profileRouter = createTRPCRouter({
       const client = await clerkClient();
 
       const userId = ctx.auth.userId!;
+      const normalizedHandle = input.handle.toLowerCase();
 
       const newProfileRows = await ctx.db
         .insert(profiles)
         .values({
           clerkId: userId,
-          handle: input.handle.toLowerCase(),
+          handle: normalizedHandle,
           displayName: input.displayName,
         })
         .returning();
@@ -41,11 +42,8 @@ export const profileRouter = createTRPCRouter({
       const newProfile = newProfileRows[0];
 
       if (newProfile) {
-        await client.users.updateUserMetadata(userId, {
-          publicMetadata: {
-            onboarded: true,
-            handle: input.handle.toLowerCase(),
-          },
+        await client.users.updateUser(userId, {
+          username: normalizedHandle,
         });
       }
 
