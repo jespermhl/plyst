@@ -8,18 +8,13 @@ export default async function PublicProfilePage({
   params: Promise<{ handle: string }>;
 }) {
   const { handle } = await params;
-  const client = await clerkClient();
-
-  const users = await client.users.getUserList({
-    username: [handle],
-    limit: 1,
-  });
-
-  const clerkUser = users.data[0];
-  if (!clerkUser) return notFound();
 
   try {
     const data = await api.block.getPublicProfile({ handle });
+    if (!data.profile || !data.profile.clerkId) return notFound();
+
+    const client = await clerkClient();
+    const clerkUser = await client.users.getUser(data.profile.clerkId);
 
     return (
       <div className="font-body min-h-screen bg-[#fafafa] px-6 text-slate-900">
@@ -33,7 +28,7 @@ export default async function PublicProfilePage({
           </div>
 
           <h1 className="font-display text-2xl font-bold tracking-tight">
-            {clerkUser.username ?? `@${handle}`}
+            {data.profile.displayName ?? `@${handle}`}
           </h1>
 
           {data.profile?.bio && (
