@@ -11,7 +11,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { type RouterOutputs } from "~/trpc/react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 type Block = RouterOutputs["block"]["getAll"][number];
 import {
@@ -30,9 +30,14 @@ export function DashboardContent() {
     api.profile.getMe.useQuery();
   const createProfile = api.profile.createInitial.useMutation();
 
+  const createAttemptedRef = useRef(false);
+
+  // Wir wollen nur einmal initial ein Profil anlegen, falls keins existiert.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (!isProfileLoading && !profile) {
+    if (!isProfileLoading && !profile && !createAttemptedRef.current) {
       createProfile.mutate();
+      createAttemptedRef.current = true;
     }
   }, [profile, isProfileLoading]);
 

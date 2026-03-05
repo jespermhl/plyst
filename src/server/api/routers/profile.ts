@@ -5,14 +5,55 @@ import { profiles } from "~/server/db/schema";
 import { clerkClient } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
 
+function canonicalizeHandle(input: string): string {
+  return input.trim().toLowerCase();
+}
+
+function normalizeClerkError(error: unknown):
+  | {
+      status?: number;
+      errors?: { code?: string }[];
+      message?: string;
+    }
+  | null {
+  if (!error || typeof error !== "object") return null;
+
+  const anyError = error as { [key: string]: unknown };
+
+  const status =
+    typeof anyError.status === "number" ? anyError.status : undefined;
+
+  const rawErrors = Array.isArray(anyError.errors)
+    ? (anyError.errors as unknown[])
+    : undefined;
+
+  const errors =
+    rawErrors?.map((entry) => {
+      const code =
+        entry && typeof entry === "object" && typeof (entry as any).code === "string"
+          ? ((entry as any).code as string)
+          : undefined;
+      return { code };
+    }) ?? undefined;
+
+  const message =
+    typeof anyError.message === "string"
+      ? (anyError.message as string)
+      : undefined;
+
+  return { status, errors, message };
+}
+
 export const profileRouter = createTRPCRouter({
   checkHandle: publicProcedure
     .input(z.object({ handle: z.string().min(2) }))
     .query(async ({ ctx, input }) => {
+      const normalizedHandle = canonicalizeHandle(input.handle);
+
       const existing = await ctx.db
         .select()
         .from(profiles)
-        .where(eq(profiles.handle, input.handle.toLowerCase()))
+        .where(eq(profiles.handle, normalizedHandle))
         .limit(1);
       return { isAvailable: existing.length === 0 };
     }),
@@ -28,28 +69,60 @@ export const profileRouter = createTRPCRouter({
       const client = await clerkClient();
 
       const userId = ctx.auth.userId!;
+      const normalizedHandle = canonicalizeHandle(input.handle);
 
       const newProfileRows = await ctx.db
         .insert(profiles)
         .values({
           clerkId: userId,
-          handle: input.handle.toLowerCase(),
+          handle: normalizedHandle,
           displayName: input.displayName,
         })
         .returning();
 
       const newProfile = newProfileRows[0];
 
-      if (newProfile) {
-        await client.users.updateUserMetadata(userId, {
-          publicMetadata: {
-            onboarded: true,
-            handle: input.handle.toLowerCase(),
-          },
+      if (!newProfile) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Profil konnte nicht erstellt werden.",
         });
       }
 
-      return newProfile;
+      try {
+        await client.users.updateUser(userId, {
+          username: normalizedHandle,
+        });
+
+        return newProfile;
+      } catch (error) {
+        await ctx.db
+          .delete(profiles)
+          .where(eq(profiles.id, newProfile.id));
+
+        const maybeError = normalizeClerkError(error);
+
+        console.error("profile.create Clerk sync failed", {
+          scope: "profile.create",
+          status: maybeError?.status,
+          code: maybeError?.errors?.[0]?.code,
+          message: maybeError?.message,
+        });
+
+        const isConflict =
+          !!maybeError &&
+          (maybeError.errors?.[0]?.code === "form_identifier_exists" ||
+            maybeError.status === 422 ||
+            maybeError.message?.toLowerCase().includes("username"));
+
+        throw new TRPCError({
+          code: isConflict ? "CONFLICT" : "INTERNAL_SERVER_ERROR",
+          message: isConflict
+            ? "Dieser Name ist bereits vergeben."
+            : "Ein Fehler ist aufgetreten.",
+          cause: error,
+        });
+      }
     }),
 
   createInitial: protectedProcedure.mutation(async ({ ctx }) => {
@@ -70,7 +143,16 @@ export const profileRouter = createTRPCRouter({
       })
       .returning();
 
-    return newProfileRows[0];
+    const newProfile = newProfileRows[0];
+
+    if (!newProfile) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Profil konnte nicht initial erstellt werden.",
+      });
+    }
+
+    return newProfile;
   }),
 
   getMe: protectedProcedure.query(async ({ ctx }) => {
@@ -87,10 +169,39 @@ export const profileRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db
+      const userId = ctx.auth.userId!;
+
+      const existingProfile = await ctx.db.query.profiles.findFirst({
+        where: eq(profiles.clerkId, userId),
+      });
+
+      if (!existingProfile) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      const hasDisplayNameChange =
+        typeof input.displayName !== "undefined" &&
+        input.displayName !== existingProfile.displayName;
+
+      const hasBioChange =
+        typeof input.bio !== "undefined" && input.bio !== existingProfile.bio;
+
+      const hasChanges = hasDisplayNameChange || hasBioChange;
+
+      if (!hasChanges) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Keine Änderungen übermittelt.",
+        });
+      }
+
+      const updatedRows = await ctx.db
         .update(profiles)
         .set(input)
-        .where(eq(profiles.clerkId, ctx.auth.userId!));
+        .where(eq(profiles.clerkId, userId))
+        .returning();
+
+      return updatedRows[0] ?? existingProfile;
     }),
 
   updateHandle: protectedProcedure
@@ -98,7 +209,15 @@ export const profileRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const client = await clerkClient();
       const userId = ctx.auth.userId!;
-      const normalizedHandle = input.newHandle.toLowerCase();
+      const normalizedHandle = canonicalizeHandle(input.newHandle);
+
+      const existingProfile = await ctx.db.query.profiles.findFirst({
+        where: eq(profiles.clerkId, userId),
+      });
+
+      if (!existingProfile) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
 
       try {
         await ctx.db
@@ -111,11 +230,35 @@ export const profileRouter = createTRPCRouter({
 
         return { success: true };
       } catch (error) {
-        console.error("updateHandle failed:", error);
+        const maybeError = normalizeClerkError(error);
+
+        try {
+          await ctx.db
+            .update(profiles)
+            .set({ handle: existingProfile.handle })
+            .where(eq(profiles.clerkId, userId));
+        } catch (rollbackError) {
+          const rollbackInfo = normalizeClerkError(rollbackError);
+          console.error("updateHandle rollback failed", {
+            scope: "profile.updateHandle.rollback",
+            status: rollbackInfo?.status,
+            code: rollbackInfo?.errors?.[0]?.code,
+            message: rollbackInfo?.message,
+          });
+        }
+
+        console.error("updateHandle failed", {
+          scope: "profile.updateHandle",
+          status: maybeError?.status,
+          code: maybeError?.errors?.[0]?.code,
+          message: maybeError?.message,
+        });
 
         const isConflict =
-          error instanceof Error &&
-          error.message.toLowerCase().includes("username");
+          !!maybeError &&
+          (maybeError.errors?.[0]?.code === "form_identifier_exists" ||
+            maybeError.status === 422 ||
+            maybeError.message?.toLowerCase().includes("username"));
 
         throw new TRPCError({
           code: isConflict ? "CONFLICT" : "INTERNAL_SERVER_ERROR",
