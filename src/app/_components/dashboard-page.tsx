@@ -34,7 +34,7 @@ export function DashboardContent() {
     if (!isProfileLoading && !profile) {
       createProfile.mutate();
     }
-  }, [profile, isProfileLoading]);
+  }, [profile, isProfileLoading, createProfile]);
 
   const addBlock = api.block.add.useMutation({
     onMutate: async () => {

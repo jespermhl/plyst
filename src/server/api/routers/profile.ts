@@ -41,13 +41,38 @@ export const profileRouter = createTRPCRouter({
 
       const newProfile = newProfileRows[0];
 
-      if (newProfile) {
-        await client.users.updateUser(userId, {
-          username: normalizedHandle,
+      if (!newProfile) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Profil konnte nicht erstellt werden.",
         });
       }
 
-      return newProfile;
+      try {
+        await client.users.updateUser(userId, {
+          username: normalizedHandle,
+        });
+
+        return newProfile;
+      } catch (error) {
+        console.error("profile.create Clerk sync failed:", error);
+
+        await ctx.db
+          .delete(profiles)
+          .where(eq(profiles.id, newProfile.id));
+
+        const isConflict =
+          error instanceof Error &&
+          error.message.toLowerCase().includes("username");
+
+        throw new TRPCError({
+          code: isConflict ? "CONFLICT" : "INTERNAL_SERVER_ERROR",
+          message: isConflict
+            ? "Dieser Name ist bereits vergeben."
+            : "Ein Fehler ist aufgetreten.",
+          cause: error,
+        });
+      }
     }),
 
   createInitial: protectedProcedure.mutation(async ({ ctx }) => {
@@ -85,10 +110,20 @@ export const profileRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const userId = ctx.auth.userId!;
+
+      const existingProfile = await ctx.db.query.profiles.findFirst({
+        where: eq(profiles.clerkId, userId),
+      });
+
+      if (!existingProfile) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
       return await ctx.db
         .update(profiles)
         .set(input)
-        .where(eq(profiles.clerkId, ctx.auth.userId!));
+        .where(eq(profiles.clerkId, userId));
     }),
 
   updateHandle: protectedProcedure
@@ -97,6 +132,14 @@ export const profileRouter = createTRPCRouter({
       const client = await clerkClient();
       const userId = ctx.auth.userId!;
       const normalizedHandle = input.newHandle.toLowerCase();
+
+      const existingProfile = await ctx.db.query.profiles.findFirst({
+        where: eq(profiles.clerkId, userId),
+      });
+
+      if (!existingProfile) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
 
       try {
         await ctx.db

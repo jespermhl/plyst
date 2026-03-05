@@ -5,7 +5,5 @@ declare global {
     metadata?: Record<string, unknown>;
   }
 
-  interface UserPublicMetadata {
-    [key: string]: unknown;
-  }
+  type UserPublicMetadata = Record<string, unknown>;
 }

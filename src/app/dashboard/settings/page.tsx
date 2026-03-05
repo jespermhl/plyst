@@ -74,7 +74,7 @@ export function AvatarUpload() {
 }
 
 export default function SettingsPage() {
-  const { user, isLoaded } = useUser();
+  const { isLoaded } = useUser();
   const utils = api.useUtils();
   const { openUserProfile } = useClerk();
 
@@ -94,6 +94,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (profile) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDisplayName(profile.displayName ?? "");
       setBio(profile.bio ?? "");
     }

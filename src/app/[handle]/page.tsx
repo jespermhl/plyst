@@ -12,10 +12,10 @@ export default async function PublicProfilePage({
   let data;
   try {
     data = await api.block.getPublicProfile({ handle });
-    if (!data || !data.profile) {
+    if (!data?.profile) {
       return notFound();
     }
-  } catch (error) {
+  } catch {
     return notFound();
   }
 
