@@ -52,6 +52,27 @@ export const profileRouter = createTRPCRouter({
       return newProfile;
     }),
 
+  createInitial: protectedProcedure.mutation(async ({ ctx }) => {
+    const userId = ctx.auth.userId!;
+
+    const existingProfile = await ctx.db.query.profiles.findFirst({
+      where: eq(profiles.clerkId, userId),
+    });
+
+    if (existingProfile) {
+      return existingProfile;
+    }
+
+    const newProfileRows = await ctx.db
+      .insert(profiles)
+      .values({
+        clerkId: userId,
+      })
+      .returning();
+
+    return newProfileRows[0];
+  }),
+
   getMe: protectedProcedure.query(async ({ ctx }) => {
     return await ctx.db.query.profiles.findFirst({
       where: eq(profiles.clerkId, ctx.auth.userId!),
@@ -77,21 +98,31 @@ export const profileRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const client = await clerkClient();
       const userId = ctx.auth.userId!;
+      const normalizedHandle = input.newHandle.toLowerCase();
 
       try {
-        await client.users.updateUser(userId, {
-          username: input.newHandle,
-        });
         await ctx.db
           .update(profiles)
-          .set({ handle: input.newHandle })
+          .set({ handle: normalizedHandle })
           .where(eq(profiles.clerkId, userId));
+        await client.users.updateUser(userId, {
+          username: normalizedHandle,
+        });
 
         return { success: true };
-      } catch (error: any) {
+      } catch (error) {
+        console.error("updateHandle failed:", error);
+
+        const isConflict =
+          error instanceof Error &&
+          error.message.toLowerCase().includes("username");
+
         throw new TRPCError({
-          code: "CONFLICT",
-          message: "Dieser Name ist bereits vergeben.",
+          code: isConflict ? "CONFLICT" : "INTERNAL_SERVER_ERROR",
+          message: isConflict
+            ? "Dieser Name ist bereits vergeben."
+            : "Ein Fehler ist aufgetreten.",
+          cause: error,
         });
       }
     }),

@@ -11,6 +11,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { type RouterOutputs } from "~/trpc/react";
+import { useEffect } from "react";
 
 type Block = RouterOutputs["block"]["getAll"][number];
 import {
@@ -24,6 +25,16 @@ export function DashboardContent() {
   const utils = api.useUtils();
 
   const { data: blocks, isLoading } = api.block.getAll.useQuery();
+
+  const { data: profile, isLoading: isProfileLoading } =
+    api.profile.getMe.useQuery();
+  const createProfile = api.profile.createInitial.useMutation();
+
+  useEffect(() => {
+    if (!isProfileLoading && !profile) {
+      createProfile.mutate();
+    }
+  }, [profile, isProfileLoading]);
 
   const addBlock = api.block.add.useMutation({
     onMutate: async () => {

@@ -12,6 +12,12 @@ export function AvatarUpload() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const MAX_SIZE = 2 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      alert("Die Datei ist zu groß. Maximal 2MB.");
+      return;
+    }
+
     try {
       setIsUploading(true);
       await user?.setProfileImage({ file });
@@ -78,6 +84,9 @@ export default function SettingsPage() {
       void utils.profile.getMe.invalidate();
       alert("Gespeichert!");
     },
+    onError: (error) => {
+      alert(`Fehler beim Speichern: ${error.message}`);
+    },
   });
 
   const [displayName, setDisplayName] = useState("");
@@ -126,9 +135,10 @@ export default function SettingsPage() {
               </div>
               <button
                 onClick={() => updateProfile.mutate({ displayName, bio })}
-                className="rounded-full bg-blue-600 px-6 py-2 text-sm font-bold text-white transition-all hover:bg-blue-700"
+                disabled={updateProfile.isPending}
+                className="rounded-full bg-blue-600 px-6 py-2 text-sm font-bold text-white transition-all hover:bg-blue-700 disabled:opacity-50"
               >
-                Speichern
+                {updateProfile.isPending ? "Wird gespeichert..." : "Speichern"}
               </button>
             </div>
           </section>
