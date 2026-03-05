@@ -2,6 +2,8 @@
 
 @theme {
   --font-display: var(--font-bricolage), sans-serif;
-  --font-sans: var(--font-urbanist), ui-sans-serif, system-ui, sans-serif,
+  --font-body: var(--font-urbanist), sans-serif;
+  --font-sans:
+    var(--font-urbanist), ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }

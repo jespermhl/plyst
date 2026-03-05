@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { useRouter } from "next/navigation";
-import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/nextjs";
+import { RedirectToSignIn, SignedOut, SignedIn } from "@clerk/nextjs";
 
 export default function OnboardingPage() {
   const [handle, setHandle] = useState("");
