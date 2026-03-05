@@ -47,9 +47,11 @@ export default async function PublicProfilePage({
               <a
                 key={block.id}
                 href={
-                  block.url?.startsWith("http")
-                    ? block.url
-                    : `https://${block.url}`
+                  block.url
+                    ? block.url.startsWith("http")
+                      ? block.url
+                      : `https://${block.url}`
+                    : "#"
                 }
                 target="_blank"
                 rel="noopener noreferrer"
