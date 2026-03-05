@@ -5,6 +5,10 @@ import { profiles } from "~/server/db/schema";
 import { clerkClient } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
 
+function canonicalizeHandle(input: string): string {
+  return input.trim().toLowerCase();
+}
+
 function normalizeClerkError(error: unknown):
   | {
       status?: number;
@@ -27,10 +31,12 @@ export const profileRouter = createTRPCRouter({
   checkHandle: publicProcedure
     .input(z.object({ handle: z.string().min(2) }))
     .query(async ({ ctx, input }) => {
+      const normalizedHandle = canonicalizeHandle(input.handle);
+
       const existing = await ctx.db
         .select()
         .from(profiles)
-        .where(eq(profiles.handle, input.handle.toLowerCase()))
+        .where(eq(profiles.handle, normalizedHandle))
         .limit(1);
       return { isAvailable: existing.length === 0 };
     }),
@@ -46,7 +52,7 @@ export const profileRouter = createTRPCRouter({
       const client = await clerkClient();
 
       const userId = ctx.auth.userId!;
-      const normalizedHandle = input.handle.toLowerCase();
+      const normalizedHandle = canonicalizeHandle(input.handle);
 
       const newProfileRows = await ctx.db
         .insert(profiles)
@@ -73,13 +79,19 @@ export const profileRouter = createTRPCRouter({
 
         return newProfile;
       } catch (error) {
-        console.error("profile.create Clerk sync failed:", error);
-
         await ctx.db
           .delete(profiles)
           .where(eq(profiles.id, newProfile.id));
 
         const maybeError = normalizeClerkError(error);
+
+        console.error("profile.create Clerk sync failed", {
+          scope: "profile.create",
+          userId,
+          status: maybeError?.status,
+          code: maybeError?.errors?.[0]?.code,
+          message: maybeError?.message,
+        });
 
         const isConflict =
           !!maybeError &&
@@ -142,6 +154,17 @@ export const profileRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
+      const hasChanges =
+        typeof input.displayName !== "undefined" ||
+        typeof input.bio !== "undefined";
+
+      if (!hasChanges) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Keine Änderungen übermittelt.",
+        });
+      }
+
       const updatedRows = await ctx.db
         .update(profiles)
         .set(input)
@@ -156,7 +179,7 @@ export const profileRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const client = await clerkClient();
       const userId = ctx.auth.userId!;
-      const normalizedHandle = input.newHandle.toLowerCase();
+      const normalizedHandle = canonicalizeHandle(input.newHandle);
 
       const existingProfile = await ctx.db.query.profiles.findFirst({
         where: eq(profiles.clerkId, userId),
@@ -177,14 +200,20 @@ export const profileRouter = createTRPCRouter({
 
         return { success: true };
       } catch (error) {
-        console.error("updateHandle failed:", error);
-
         await ctx.db
           .update(profiles)
           .set({ handle: existingProfile.handle })
           .where(eq(profiles.clerkId, userId));
 
         const maybeError = normalizeClerkError(error);
+
+        console.error("updateHandle failed", {
+          scope: "profile.updateHandle",
+          userId,
+          status: maybeError?.status,
+          code: maybeError?.errors?.[0]?.code,
+          message: maybeError?.message,
+        });
 
         const isConflict =
           !!maybeError &&

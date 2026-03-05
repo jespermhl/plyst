@@ -1,6 +1,7 @@
 import { api } from "~/trpc/server";
 import { notFound } from "next/navigation";
 import { clerkClient } from "@clerk/nextjs/server";
+import { TRPCError } from "@trpc/server";
 
 export default async function PublicProfilePage({
   params,
@@ -15,8 +16,11 @@ export default async function PublicProfilePage({
     if (!data?.profile) {
       return notFound();
     }
-  } catch {
-    return notFound();
+  } catch (error) {
+    if (error instanceof TRPCError && error.code === "NOT_FOUND") {
+      return notFound();
+    }
+    throw error;
   }
 
   let clerkUser = null;
@@ -88,7 +92,7 @@ export default async function PublicProfilePage({
               <div
                 key={block.id}
                 className="group relative flex w-full items-center justify-center rounded-4xl border border-dashed border-slate-200 bg-slate-50 px-6 py-5 font-bold text-slate-400"
-                aria-disabled="true"
+                aria-hidden="true"
               >
                 {block.title ?? "Ohne Titel"}
                 <span className="ml-2 text-xs font-normal text-slate-400">
