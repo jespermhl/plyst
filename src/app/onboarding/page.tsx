@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { useRouter } from "next/navigation";
-import { RedirectToSignIn, SignedOut, SignedIn } from "@clerk/nextjs";
+import { RedirectToSignIn, Show } from "@clerk/nextjs";
 
 export default function OnboardingPage() {
   const [handle, setHandle] = useState("");
@@ -36,11 +36,11 @@ export default function OnboardingPage() {
 
   return (
     <>
-      <SignedOut>
+      <Show when="signed-out">
         <RedirectToSignIn />
-      </SignedOut>
+      </Show>
 
-      <SignedIn>
+      <Show when="signed-in">
         <main className="flex min-h-screen flex-col items-center justify-center bg-white px-4">
           <div className="absolute inset-0 -z-10 h-full w-full bg-white bg-[linear-gradient(to_right,#e5e7eb_1px,transparent_1px),linear-gradient(to_bottom,#e5e7eb_1px,transparent_1px)] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,transparent_0%,#fff_100%)] bg-size-[4rem_4rem]"></div>
 
@@ -104,7 +104,7 @@ export default function OnboardingPage() {
             </p>
           </div>
         </main>
-      </SignedIn>
+      </Show>
     </>
   );
 }
