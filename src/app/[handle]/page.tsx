@@ -53,39 +53,50 @@ export default async function PublicProfilePage({
         )}
 
         <div className="mt-12 flex flex-col gap-4">
-          {data.blocks.map((block) => (
-            <a
-              key={block.id}
-              href={
-                block.url
-                  ? block.url.startsWith("http")
+          {data.blocks.map((block) =>
+            block.url ? (
+              <a
+                key={block.id}
+                href={
+                  block.url.startsWith("http")
                     ? block.url
                     : `https://${block.url}`
-                  : "#"
-              }
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group relative flex w-full items-center justify-center rounded-4xl border border-slate-100 bg-white px-6 py-5 font-bold shadow-sm transition-all hover:scale-[1.02] hover:shadow-md active:scale-[0.98]"
-            >
-              {block.title}
-              <div className="absolute right-6 opacity-0 transition-opacity group-hover:opacity-100">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M7 7h10v10" />
-                  <path d="M7 17 17 7" />
-                </svg>
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative flex w-full items-center justify-center rounded-4xl border border-slate-100 bg-white px-6 py-5 font-bold shadow-sm transition-all hover:scale-[1.02] hover:shadow-md active:scale-[0.98]"
+              >
+                {block.title ?? "Unbenannt"}
+                <div className="absolute right-6 opacity-0 transition-opacity group-hover:opacity-100">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M7 7h10v10" />
+                    <path d="M7 17 17 7" />
+                  </svg>
+                </div>
+              </a>
+            ) : (
+              <div
+                key={block.id}
+                className="group relative flex w-full items-center justify-center rounded-4xl border border-dashed border-slate-200 bg-slate-50 px-6 py-5 font-bold text-slate-400"
+                aria-disabled="true"
+              >
+                {block.title ?? "Ohne Titel"}
+                <span className="ml-2 text-xs font-normal text-slate-400">
+                  (kein Link hinterlegt)
+                </span>
               </div>
-            </a>
-          ))}
+            ),
+          )}
         </div>
 
         <div className="mt-20 opacity-20 transition-opacity hover:opacity-100">

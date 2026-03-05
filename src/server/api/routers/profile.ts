@@ -5,6 +5,24 @@ import { profiles } from "~/server/db/schema";
 import { clerkClient } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
 
+function normalizeClerkError(error: unknown):
+  | {
+      status?: number;
+      errors?: { code?: string }[];
+      message?: string;
+    }
+  | null {
+  if (!error || typeof error !== "object") return null;
+
+  const e = error as {
+    status?: number;
+    errors?: { code?: string }[];
+    message?: string;
+  };
+
+  return e;
+}
+
 export const profileRouter = createTRPCRouter({
   checkHandle: publicProcedure
     .input(z.object({ handle: z.string().min(2) }))
@@ -61,9 +79,13 @@ export const profileRouter = createTRPCRouter({
           .delete(profiles)
           .where(eq(profiles.id, newProfile.id));
 
+        const maybeError = normalizeClerkError(error);
+
         const isConflict =
-          error instanceof Error &&
-          error.message.toLowerCase().includes("username");
+          !!maybeError &&
+          (maybeError.errors?.[0]?.code === "form_identifier_exists" ||
+            maybeError.status === 422 ||
+            maybeError.message?.toLowerCase().includes("username"));
 
         throw new TRPCError({
           code: isConflict ? "CONFLICT" : "INTERNAL_SERVER_ERROR",
@@ -120,10 +142,13 @@ export const profileRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
-      return await ctx.db
+      const updatedRows = await ctx.db
         .update(profiles)
         .set(input)
-        .where(eq(profiles.clerkId, userId));
+        .where(eq(profiles.clerkId, userId))
+        .returning();
+
+      return updatedRows[0] ?? existingProfile;
     }),
 
   updateHandle: protectedProcedure
@@ -154,9 +179,18 @@ export const profileRouter = createTRPCRouter({
       } catch (error) {
         console.error("updateHandle failed:", error);
 
+        await ctx.db
+          .update(profiles)
+          .set({ handle: existingProfile.handle })
+          .where(eq(profiles.clerkId, userId));
+
+        const maybeError = normalizeClerkError(error);
+
         const isConflict =
-          error instanceof Error &&
-          error.message.toLowerCase().includes("username");
+          !!maybeError &&
+          (maybeError.errors?.[0]?.code === "form_identifier_exists" ||
+            maybeError.status === 422 ||
+            maybeError.message?.toLowerCase().includes("username"));
 
         throw new TRPCError({
           code: isConflict ? "CONFLICT" : "INTERNAL_SERVER_ERROR",
