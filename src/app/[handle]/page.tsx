@@ -3,6 +3,44 @@ import { notFound } from "next/navigation";
 import { clerkClient } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
 
+function normalizeClerkError(error: unknown):
+  | {
+      status?: number;
+      code?: string;
+      message?: string;
+    }
+  | null {
+  if (!error || typeof error !== "object") return null;
+
+  const anyError = error as { [key: string]: unknown };
+
+  const status =
+    typeof anyError.status === "number" ? anyError.status : undefined;
+
+  const errorArray = Array.isArray(anyError.errors)
+    ? (anyError.errors as unknown[])
+    : undefined;
+
+  const codeFromErrors =
+    errorArray && errorArray.length > 0
+      ? typeof (errorArray[0] as any).code === "string"
+        ? ((errorArray[0] as any).code as string)
+        : undefined
+      : undefined;
+
+  const code =
+    typeof anyError.code === "string"
+      ? (anyError.code as string)
+      : codeFromErrors;
+
+  const message =
+    typeof anyError.message === "string"
+      ? (anyError.message as string)
+      : undefined;
+
+  return { status, code, message };
+}
+
 export default async function PublicProfilePage({
   params,
 }: {
@@ -28,7 +66,8 @@ export default async function PublicProfilePage({
     const client = await clerkClient();
     clerkUser = await client.users.getUser(data.profile.clerkId);
   } catch (error) {
-    console.error("Clerk API Error:", error);
+    const info = normalizeClerkError(error);
+    console.error("Clerk API Error in PublicProfilePage", info ?? {});
   }
 
   return (
@@ -92,7 +131,7 @@ export default async function PublicProfilePage({
               <div
                 key={block.id}
                 className="group relative flex w-full items-center justify-center rounded-4xl border border-dashed border-slate-200 bg-slate-50 px-6 py-5 font-bold text-slate-400"
-                aria-hidden="true"
+                aria-disabled="true"
               >
                 {block.title ?? "Ohne Titel"}
                 <span className="ml-2 text-xs font-normal text-slate-400">

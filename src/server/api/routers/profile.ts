@@ -18,13 +18,30 @@ function normalizeClerkError(error: unknown):
   | null {
   if (!error || typeof error !== "object") return null;
 
-  const e = error as {
-    status?: number;
-    errors?: { code?: string }[];
-    message?: string;
-  };
+  const anyError = error as { [key: string]: unknown };
 
-  return e;
+  const status =
+    typeof anyError.status === "number" ? anyError.status : undefined;
+
+  const rawErrors = Array.isArray(anyError.errors)
+    ? (anyError.errors as unknown[])
+    : undefined;
+
+  const errors =
+    rawErrors?.map((entry) => {
+      const code =
+        entry && typeof entry === "object" && typeof (entry as any).code === "string"
+          ? ((entry as any).code as string)
+          : undefined;
+      return { code };
+    }) ?? undefined;
+
+  const message =
+    typeof anyError.message === "string"
+      ? (anyError.message as string)
+      : undefined;
+
+  return { status, errors, message };
 }
 
 export const profileRouter = createTRPCRouter({
@@ -87,7 +104,6 @@ export const profileRouter = createTRPCRouter({
 
         console.error("profile.create Clerk sync failed", {
           scope: "profile.create",
-          userId,
           status: maybeError?.status,
           code: maybeError?.errors?.[0]?.code,
           message: maybeError?.message,
@@ -127,7 +143,16 @@ export const profileRouter = createTRPCRouter({
       })
       .returning();
 
-    return newProfileRows[0];
+    const newProfile = newProfileRows[0];
+
+    if (!newProfile) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Profil konnte nicht initial erstellt werden.",
+      });
+    }
+
+    return newProfile;
   }),
 
   getMe: protectedProcedure.query(async ({ ctx }) => {
@@ -154,9 +179,14 @@ export const profileRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
-      const hasChanges =
-        typeof input.displayName !== "undefined" ||
-        typeof input.bio !== "undefined";
+      const hasDisplayNameChange =
+        typeof input.displayName !== "undefined" &&
+        input.displayName !== existingProfile.displayName;
+
+      const hasBioChange =
+        typeof input.bio !== "undefined" && input.bio !== existingProfile.bio;
+
+      const hasChanges = hasDisplayNameChange || hasBioChange;
 
       if (!hasChanges) {
         throw new TRPCError({
@@ -200,16 +230,25 @@ export const profileRouter = createTRPCRouter({
 
         return { success: true };
       } catch (error) {
-        await ctx.db
-          .update(profiles)
-          .set({ handle: existingProfile.handle })
-          .where(eq(profiles.clerkId, userId));
-
         const maybeError = normalizeClerkError(error);
+
+        try {
+          await ctx.db
+            .update(profiles)
+            .set({ handle: existingProfile.handle })
+            .where(eq(profiles.clerkId, userId));
+        } catch (rollbackError) {
+          const rollbackInfo = normalizeClerkError(rollbackError);
+          console.error("updateHandle rollback failed", {
+            scope: "profile.updateHandle.rollback",
+            status: rollbackInfo?.status,
+            code: rollbackInfo?.errors?.[0]?.code,
+            message: rollbackInfo?.message,
+          });
+        }
 
         console.error("updateHandle failed", {
           scope: "profile.updateHandle",
-          userId,
           status: maybeError?.status,
           code: maybeError?.errors?.[0]?.code,
           message: maybeError?.message,
