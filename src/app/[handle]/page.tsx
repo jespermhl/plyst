@@ -19,7 +19,7 @@ export default async function PublicProfilePage({
   if (!clerkUser) return notFound();
 
   try {
-    const data = await api.block.getPublicProfile({ handle });
+    const data = await api.block.getPublicProfile({ clerkId: clerkUser.id });
 
     return (
       <div className="font-body min-h-screen bg-[#fafafa] px-6 text-slate-900">
@@ -33,17 +33,17 @@ export default async function PublicProfilePage({
           </div>
 
           <h1 className="font-display text-2xl font-bold tracking-tight">
-            {data.profile.displayName ?? `@${handle}`}
+            {clerkUser.username ?? `@${handle}`}
           </h1>
 
-          {data.profile.bio && (
+          {data.bio && (
             <p className="mx-auto mt-3 max-w-sm leading-relaxed text-slate-500">
-              {data.profile.bio}
+              {data.bio}
             </p>
           )}
 
           <div className="mt-12 flex flex-col gap-4">
-            {data.blocks.map((block) => (
+            {data.map((block) => (
               <a
                 key={block.id}
                 href={

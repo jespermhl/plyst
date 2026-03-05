@@ -101,19 +101,17 @@ export const blockRouter = createTRPCRouter({
     }),
 
   getPublicProfile: publicProcedure
-    .input(z.object({ handle: z.string() }))
+    .input(z.object({ clerkId: z.string() }))
     .query(async ({ ctx, input }) => {
       const profile = await ctx.db.query.profiles.findFirst({
-        where: eq(profiles.handle, input.handle),
+        where: eq(profiles.clerkId, input.clerkId),
       });
 
-      if (!profile) throw new TRPCError({ code: "NOT_FOUND" });
+      if (!profile) return [];
 
-      const profileBlocks = await ctx.db.query.blocks.findMany({
+      return await ctx.db.query.blocks.findMany({
         where: eq(blocks.profileId, profile.id),
         orderBy: [asc(blocks.order)],
       });
-
-      return { profile, blocks: profileBlocks };
     }),
 });
