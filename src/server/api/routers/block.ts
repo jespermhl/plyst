@@ -107,13 +107,21 @@ export const blockRouter = createTRPCRouter({
         where: eq(profiles.handle, input.handle),
       });
 
-      if (!profile) throw new TRPCError({ code: "NOT_FOUND" });
+      if (!profile) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Profil nicht gefunden",
+        });
+      }
 
-      const profileBlocks = await ctx.db.query.blocks.findMany({
+      const allBlocks = await ctx.db.query.blocks.findMany({
         where: eq(blocks.profileId, profile.id),
         orderBy: [asc(blocks.order)],
       });
 
-      return { profile, blocks: profileBlocks };
+      return {
+        profile: profile,
+        blocks: allBlocks,
+      };
     }),
 });
