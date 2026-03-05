@@ -20,8 +20,12 @@ function AvatarUpload() {
     }
 
     try {
+      if (!user) {
+        alert("Du bist nicht angemeldet. Bitte Seite neu laden.");
+        return;
+      }
       setIsUploading(true);
-      await user?.setProfileImage({ file });
+      await user.setProfileImage({ file });
       alert("Profilbild aktualisiert!");
     } catch (err) {
       console.error(err);
@@ -92,15 +96,12 @@ export function DashboardSettingsPanel() {
     },
   });
 
-  const [displayName, setDisplayName] = useState("");
-  const [bio, setBio] = useState("");
-
-  useEffect(() => {
-    if (profile) {
-      setDisplayName(profile.displayName ?? "");
-      setBio(profile.bio ?? "");
-    }
-  }, [profile]);
+  const [draft, setDraft] = useState<{
+    displayName: string;
+    bio: string;
+  } | null>(null);
+  const displayName = draft?.displayName ?? profile?.displayName ?? "";
+  const bio = draft?.bio ?? profile?.bio ?? "";
 
   if (!isLoaded) return null;
 
@@ -118,7 +119,13 @@ export function DashboardSettingsPanel() {
             <input
               className="w-full rounded-2xl bg-slate-50 px-5 py-3 outline-none focus:ring-2 focus:ring-blue-100"
               value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
+              maxLength={20}
+              onChange={(e) =>
+                setDraft((prev) => ({
+                  displayName: e.target.value,
+                  bio: prev?.bio ?? profile?.bio ?? "",
+                }))
+              }
             />
           </div>
           <div className="space-y-1">
@@ -128,12 +135,24 @@ export function DashboardSettingsPanel() {
             <textarea
               className="w-full rounded-2xl bg-slate-50 px-5 py-3 outline-none focus:ring-2 focus:ring-blue-100"
               value={bio}
-              onChange={(e) => setBio(e.target.value)}
+              maxLength={100}
+              onChange={(e) =>
+                setDraft((prev) => ({
+                  displayName: prev?.displayName ?? profile?.displayName ?? "",
+                  bio: e.target.value,
+                }))
+              }
               rows={2}
             />
           </div>
           <button
-            onClick={() => updateProfile.mutate({ displayName, bio })}
+            onClick={() =>
+              updateProfile.mutate({
+                displayName:
+                  displayName.trim() === "" ? undefined : displayName.trim(),
+                bio,
+              })
+            }
             disabled={updateProfile.isPending}
             className="rounded-full bg-blue-600 px-6 py-2 text-sm font-bold text-white transition-all hover:bg-blue-700 disabled:opacity-50"
           >
@@ -166,4 +185,3 @@ export function DashboardSettingsPanel() {
     </div>
   );
 }
-
