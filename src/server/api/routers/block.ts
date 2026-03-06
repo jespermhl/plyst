@@ -3,6 +3,7 @@ import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { blocks, profiles } from "~/server/db/schema";
 import z from "zod";
 import { TRPCError } from "@trpc/server";
+import { clerkClient } from "@clerk/nextjs/server";
 
 export const blockRouter = createTRPCRouter({
   getAll: protectedProcedure.query(async ({ ctx }) => {
@@ -103,25 +104,27 @@ export const blockRouter = createTRPCRouter({
   getPublicProfile: publicProcedure
     .input(z.object({ handle: z.string() }))
     .query(async ({ ctx, input }) => {
-      const profile = await ctx.db.query.profiles.findFirst({
-        where: eq(profiles.handle, input.handle),
+      const client = await clerkClient();
+
+      const users = await client.users.getUserList({
+        username: [input.handle.toLowerCase()],
+        limit: 1,
       });
 
-      if (!profile) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Profil nicht gefunden",
-        });
-      }
+      const clerkUser = users.data[0];
+      if (!clerkUser) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const profile = await ctx.db.query.profiles.findFirst({
+        where: eq(profiles.clerkId, clerkUser.id),
+      });
+
+      if (!profile) throw new TRPCError({ code: "NOT_FOUND" });
 
       const allBlocks = await ctx.db.query.blocks.findMany({
         where: eq(blocks.profileId, profile.id),
         orderBy: [asc(blocks.order)],
       });
 
-      return {
-        profile: profile,
-        blocks: allBlocks,
-      };
+      return { profile, blocks: allBlocks };
     }),
 });
