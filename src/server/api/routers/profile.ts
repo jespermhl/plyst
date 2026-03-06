@@ -9,16 +9,14 @@ function canonicalizeHandle(input: string): string {
   return input.trim().toLowerCase();
 }
 
-function normalizeClerkError(error: unknown):
-  | {
-      status?: number;
-      errors?: { code?: string }[];
-      message?: string;
-    }
-  | null {
+function normalizeClerkError(error: unknown): {
+  status?: number;
+  errors?: { code?: string }[];
+  message?: string;
+} | null {
   if (!error || typeof error !== "object") return null;
 
-  const anyError = error as { [key: string]: unknown };
+  const anyError = error as Record<string, unknown>;
 
   const status =
     typeof anyError.status === "number" ? anyError.status : undefined;
@@ -29,17 +27,16 @@ function normalizeClerkError(error: unknown):
 
   const errors =
     rawErrors?.map((entry) => {
+      const typedEntry = entry as Record<string, unknown>;
       const code =
-        entry && typeof entry === "object" && typeof (entry as any).code === "string"
-          ? ((entry as any).code as string)
+        typedEntry && typeof typedEntry.code === "string"
+          ? (typedEntry.code)
           : undefined;
       return { code };
     }) ?? undefined;
 
   const message =
-    typeof anyError.message === "string"
-      ? (anyError.message as string)
-      : undefined;
+    typeof anyError.message === "string" ? anyError.message : undefined;
 
   return { status, errors, message };
 }
@@ -96,9 +93,7 @@ export const profileRouter = createTRPCRouter({
 
         return newProfile;
       } catch (error) {
-        await ctx.db
-          .delete(profiles)
-          .where(eq(profiles.id, newProfile.id));
+        await ctx.db.delete(profiles).where(eq(profiles.id, newProfile.id));
 
         const maybeError = normalizeClerkError(error);
 

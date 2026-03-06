@@ -3,16 +3,14 @@ import { notFound } from "next/navigation";
 import { clerkClient } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
 
-function normalizeClerkError(error: unknown):
-  | {
-      status?: number;
-      code?: string;
-      message?: string;
-    }
-  | null {
+function normalizeClerkError(error: unknown): {
+  status?: number;
+  code?: string;
+  message?: string;
+} | null {
   if (!error || typeof error !== "object") return null;
 
-  const anyError = error as { [key: string]: unknown };
+  const anyError = error as Record<string, unknown>;
 
   const status =
     typeof anyError.status === "number" ? anyError.status : undefined;
@@ -21,22 +19,20 @@ function normalizeClerkError(error: unknown):
     ? (anyError.errors as unknown[])
     : undefined;
 
-  const codeFromErrors =
+  const firstError =
     errorArray && errorArray.length > 0
-      ? typeof (errorArray[0] as any).code === "string"
-        ? ((errorArray[0] as any).code as string)
-        : undefined
+      ? (errorArray[0] as Record<string, unknown>)
+      : undefined;
+  const codeFromErrors =
+    firstError && typeof firstError.code === "string"
+      ? (firstError.code)
       : undefined;
 
   const code =
-    typeof anyError.code === "string"
-      ? (anyError.code as string)
-      : codeFromErrors;
+    typeof anyError.code === "string" ? anyError.code : codeFromErrors;
 
   const message =
-    typeof anyError.message === "string"
-      ? (anyError.message as string)
-      : undefined;
+    typeof anyError.message === "string" ? anyError.message : undefined;
 
   return { status, code, message };
 }
@@ -75,6 +71,7 @@ export default async function PublicProfilePage({
       <div className="mx-auto max-w-2xl pt-20 pb-10 text-center">
         <div className="mx-auto mb-6 h-24 w-24 rounded-full border-[3px] border-blue-500/10 p-2 shadow-sm">
           {clerkUser?.imageUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={clerkUser.imageUrl}
               alt={clerkUser.username ?? "Profile"}
