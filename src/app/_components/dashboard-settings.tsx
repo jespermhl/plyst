@@ -2,7 +2,7 @@
 
 import { useUser, useClerk } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 function AvatarUpload() {
   const { user } = useUser();
@@ -42,6 +42,7 @@ function AvatarUpload() {
       </h2>
       <div className="mt-6 flex items-center gap-6">
         <div className="group relative">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={user?.imageUrl}
             className={`h-24 w-24 rounded-full border-4 border-slate-50 object-cover shadow-sm transition-opacity ${

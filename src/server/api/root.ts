@@ -1,5 +1,4 @@
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
-import { waitlistRouter } from "./routers/waitlist";
 import { profileRouter } from "./routers/profile";
 import { blockRouter } from "./routers/block";
 
@@ -9,7 +8,6 @@ import { blockRouter } from "./routers/block";
  * All routers added in /api/routers should be manually added here.
  */
 export const appRouter = createTRPCRouter({
-  waitlist: waitlistRouter,
   profile: profileRouter,
   block: blockRouter,
 });
