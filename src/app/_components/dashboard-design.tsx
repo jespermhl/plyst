@@ -14,17 +14,17 @@ export function DashboardDesignPanel() {
   const utils = api.useUtils();
   const saveCounterRef = useRef(0);
 
-  const updateProfile = api.profile.update.useMutation({
+  const { mutate: updateProfileMutate } = api.profile.update.useMutation({
     onMutate: () => {
       const previousProfile = utils.profile.getMe.getData();
       return { saveId: saveCounterRef.current, previousProfile };
     },
-    onSuccess: (data, variables, context) => {
+    onSuccess: (_data, _variables, context) => {
       if (context?.saveId === saveCounterRef.current) {
         void utils.profile.getMe.invalidate();
       }
     },
-    onError: (error, variables, context) => {
+    onError: (error, _variables, context) => {
       alert(`Fehler beim Speichern: ${error.message}`);
       if (
         context?.saveId === saveCounterRef.current &&
@@ -77,13 +77,13 @@ export function DashboardDesignPanel() {
       saveCounterRef.current += 1;
 
       saveTimeoutRef.current = setTimeout(() => {
-        updateProfile.mutate({
+        updateProfileMutate({
           theme: newTheme,
         });
         lastPendingThemeRef.current = null;
       }, 500);
     },
-    [updateProfile],
+    [updateProfileMutate],
   );
 
   useEffect(() => {
@@ -91,13 +91,13 @@ export function DashboardDesignPanel() {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
         if (lastPendingThemeRef.current) {
-          updateProfile.mutate({
+          updateProfileMutate({
             theme: lastPendingThemeRef.current,
           });
         }
       }
     };
-  }, [updateProfile]);
+  }, [updateProfileMutate]);
 
   return (
     <div className="space-y-8 pb-32">
