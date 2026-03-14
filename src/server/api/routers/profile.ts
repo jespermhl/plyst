@@ -1,9 +1,15 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { profiles } from "~/server/db/schema";
 import { clerkClient } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
+import {
+  ThemeConfigSchema,
+  type ThemeConfig,
+  defaultTheme,
+  deepMergeTheme,
+} from "~/lib/theme";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
 function canonicalizeHandle(input: string): string {
   return input.trim().toLowerCase();
@@ -30,7 +36,7 @@ function normalizeClerkError(error: unknown): {
       const typedEntry = entry as Record<string, unknown>;
       const code =
         typedEntry && typeof typedEntry.code === "string"
-          ? (typedEntry.code)
+          ? typedEntry.code
           : undefined;
       return { code };
     }) ?? undefined;
@@ -161,6 +167,7 @@ export const profileRouter = createTRPCRouter({
       z.object({
         displayName: z.string().min(1).max(50).optional(),
         bio: z.string().max(160).optional(),
+        theme: ThemeConfigSchema.optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -181,7 +188,9 @@ export const profileRouter = createTRPCRouter({
       const hasBioChange =
         typeof input.bio !== "undefined" && input.bio !== existingProfile.bio;
 
-      const hasChanges = hasDisplayNameChange || hasBioChange;
+      const hasThemeChange = typeof input.theme !== "undefined";
+
+      const hasChanges = hasDisplayNameChange || hasBioChange || hasThemeChange;
 
       if (!hasChanges) {
         throw new TRPCError({
@@ -190,9 +199,19 @@ export const profileRouter = createTRPCRouter({
         });
       }
 
+      const mergedTheme =
+        typeof input.theme !== "undefined"
+          ? deepMergeTheme(existingProfile.theme ?? defaultTheme, input.theme)
+          : undefined;
+
+      const { theme: _themeInput, ...restInput } = input;
+
       const updatedRows = await ctx.db
         .update(profiles)
-        .set(input)
+        .set({
+          ...restInput,
+          ...(mergedTheme !== undefined ? { theme: mergedTheme } : {}),
+        })
         .where(eq(profiles.clerkId, userId))
         .returning();
 
