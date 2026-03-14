@@ -16,15 +16,22 @@ export function DashboardDesignPanel() {
 
   const updateProfile = api.profile.update.useMutation({
     onMutate: () => {
-      return { saveId: saveCounterRef.current };
+      const previousProfile = utils.profile.getMe.getData();
+      return { saveId: saveCounterRef.current, previousProfile };
     },
     onSuccess: (data, variables, context) => {
       if (context?.saveId === saveCounterRef.current) {
         void utils.profile.getMe.invalidate();
       }
     },
-    onError: (error) => {
+    onError: (error, variables, context) => {
       alert(`Fehler beim Speichern: ${error.message}`);
+      if (
+        context?.saveId === saveCounterRef.current &&
+        context.previousProfile !== undefined
+      ) {
+        utils.profile.getMe.setData(undefined, context.previousProfile);
+      }
     },
   });
 
@@ -33,7 +40,7 @@ export function DashboardDesignPanel() {
   const applyOptimisticUpdate = (newTheme: ThemeConfig) => {
     utils.profile.getMe.setData(undefined, (old) => {
       if (!old) return old;
-      return { ...old, theme: newTheme as any };
+      return { ...old, theme: newTheme as ThemeConfig };
     });
   };
 
@@ -59,9 +66,11 @@ export function DashboardDesignPanel() {
   };
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastPendingThemeRef = useRef<ThemeConfig | null>(null);
 
   const saveTheme = useCallback(
     (newTheme: ThemeConfig) => {
+      lastPendingThemeRef.current = newTheme;
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
@@ -71,6 +80,7 @@ export function DashboardDesignPanel() {
         updateProfile.mutate({
           theme: newTheme,
         });
+        lastPendingThemeRef.current = null;
       }, 500);
     },
     [updateProfile],
@@ -80,9 +90,14 @@ export function DashboardDesignPanel() {
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
+        if (lastPendingThemeRef.current) {
+          updateProfile.mutate({
+            theme: lastPendingThemeRef.current,
+          });
+        }
       }
     };
-  }, []);
+  }, [updateProfile]);
 
   return (
     <div className="space-y-8 pb-32">
@@ -91,10 +106,14 @@ export function DashboardDesignPanel() {
 
         <div className="mt-6 space-y-6">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-bold text-slate-700">
+            <label
+              htmlFor="theme-backgroundColor"
+              className="text-sm font-bold text-slate-700"
+            >
               Hintergrundfarbe
             </label>
             <input
+              id="theme-backgroundColor"
               type="color"
               value={currentTheme.backgroundColor}
               onChange={(e) => handleChange("backgroundColor", e.target.value)}
@@ -103,10 +122,14 @@ export function DashboardDesignPanel() {
           </div>
 
           <div className="flex items-center justify-between">
-            <label className="text-sm font-bold text-slate-700">
+            <label
+              htmlFor="theme-textColor"
+              className="text-sm font-bold text-slate-700"
+            >
               Textfarbe
             </label>
             <input
+              id="theme-textColor"
               type="color"
               value={currentTheme.textColor}
               onChange={(e) => handleChange("textColor", e.target.value)}
@@ -115,10 +138,14 @@ export function DashboardDesignPanel() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700">
+            <label
+              htmlFor="theme-fontFamily"
+              className="text-sm font-bold text-slate-700"
+            >
               Schriftart
             </label>
             <select
+              id="theme-fontFamily"
               value={currentTheme.fontFamily}
               onChange={(e) => handleChange("fontFamily", e.target.value)}
               className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 outline-none focus:ring-2 focus:ring-blue-100"
@@ -138,10 +165,14 @@ export function DashboardDesignPanel() {
 
         <div className="mt-6 space-y-6">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-bold text-slate-700">
+            <label
+              htmlFor="button-backgroundColor"
+              className="text-sm font-bold text-slate-700"
+            >
               Button Farbe
             </label>
             <input
+              id="button-backgroundColor"
               type="color"
               value={currentTheme.buttonStyle.backgroundColor}
               onChange={(e) =>
@@ -152,10 +183,14 @@ export function DashboardDesignPanel() {
           </div>
 
           <div className="flex items-center justify-between">
-            <label className="text-sm font-bold text-slate-700">
+            <label
+              htmlFor="button-textColor"
+              className="text-sm font-bold text-slate-700"
+            >
               Button Textfarbe
             </label>
             <input
+              id="button-textColor"
               type="color"
               value={currentTheme.buttonStyle.textColor}
               onChange={(e) => handleButtonChange("textColor", e.target.value)}
@@ -165,10 +200,14 @@ export function DashboardDesignPanel() {
 
           <div className="space-y-4 border-t border-slate-100 pt-4">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-bold text-slate-700">
+              <label
+                htmlFor="button-borderColor"
+                className="text-sm font-bold text-slate-700"
+              >
                 Randfarbe
               </label>
               <input
+                id="button-borderColor"
                 type="color"
                 value={currentTheme.buttonStyle.borderColor}
                 onChange={(e) =>
@@ -180,7 +219,10 @@ export function DashboardDesignPanel() {
 
             <div className="space-y-2">
               <div className="flex justify-between">
-                <label className="text-sm font-bold text-slate-700">
+                <label
+                  htmlFor="button-borderWidth"
+                  className="text-sm font-bold text-slate-700"
+                >
                   Randdicke
                 </label>
                 <span className="text-xs text-slate-500">
@@ -188,6 +230,7 @@ export function DashboardDesignPanel() {
                 </span>
               </div>
               <input
+                id="button-borderWidth"
                 type="range"
                 min="0"
                 max="10"
@@ -201,7 +244,10 @@ export function DashboardDesignPanel() {
 
             <div className="space-y-2">
               <div className="flex justify-between">
-                <label className="text-sm font-bold text-slate-700">
+                <label
+                  htmlFor="button-borderRadius"
+                  className="text-sm font-bold text-slate-700"
+                >
                   Abrundung (Radius)
                 </label>
                 <span className="text-xs text-slate-500">
@@ -209,6 +255,7 @@ export function DashboardDesignPanel() {
                 </span>
               </div>
               <input
+                id="button-borderRadius"
                 type="range"
                 min="0"
                 max="40"
@@ -221,10 +268,14 @@ export function DashboardDesignPanel() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">
+              <label
+                htmlFor="button-shadow"
+                className="text-sm font-bold text-slate-700"
+              >
                 Schatten
               </label>
               <select
+                id="button-shadow"
                 value={currentTheme.buttonStyle.shadow}
                 onChange={(e) => handleButtonChange("shadow", e.target.value)}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 outline-none focus:ring-2 focus:ring-blue-100"
