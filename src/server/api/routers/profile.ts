@@ -30,7 +30,7 @@ function normalizeClerkError(error: unknown): {
       const typedEntry = entry as Record<string, unknown>;
       const code =
         typedEntry && typeof typedEntry.code === "string"
-          ? (typedEntry.code)
+          ? typedEntry.code
           : undefined;
       return { code };
     }) ?? undefined;
@@ -161,6 +161,7 @@ export const profileRouter = createTRPCRouter({
       z.object({
         displayName: z.string().min(1).max(50).optional(),
         bio: z.string().max(160).optional(),
+        theme: z.any().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -181,7 +182,9 @@ export const profileRouter = createTRPCRouter({
       const hasBioChange =
         typeof input.bio !== "undefined" && input.bio !== existingProfile.bio;
 
-      const hasChanges = hasDisplayNameChange || hasBioChange;
+      const hasThemeChange = typeof input.theme !== "undefined";
+
+      const hasChanges = hasDisplayNameChange || hasBioChange || hasThemeChange;
 
       if (!hasChanges) {
         throw new TRPCError({

@@ -15,6 +15,11 @@ import { type RouterOutputs } from "~/trpc/react";
 import { useEffect, useRef, useState } from "react";
 import { DashboardSettingsPanel } from "./dashboard-settings";
 import {
+  DashboardDesignPanel,
+  defaultTheme,
+  type ThemeConfig,
+} from "./dashboard-design";
+import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
@@ -24,7 +29,7 @@ import {
 type Block = RouterOutputs["block"]["getAll"][number];
 
 type DashboardContentProps = {
-  initialTab?: "editor" | "settings";
+  initialTab?: "editor" | "design" | "settings";
 };
 
 export function DashboardContent({
@@ -73,7 +78,9 @@ export function DashboardContent({
     },
   });
 
-  const [activeTab, setActiveTab] = useState<"editor" | "settings">(initialTab);
+  const [activeTab, setActiveTab] = useState<"editor" | "design" | "settings">(
+    initialTab,
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -136,12 +143,18 @@ export function DashboardContent({
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="font-display text-4xl font-bold tracking-tight">
-                {activeTab === "editor" ? "Editor" : "Einstellungen"}
+                {activeTab === "editor"
+                  ? "Editor"
+                  : activeTab === "design"
+                    ? "Design"
+                    : "Einstellungen"}
               </h1>
               <p className="mt-2 text-slate-500">
                 {activeTab === "editor"
                   ? "Erstelle und verwalte deine Profil-Blöcke."
-                  : "Passe dein öffentliches Profil und deinen Account an."}
+                  : activeTab === "design"
+                    ? "Passe Farben, Schriften und Buttons an."
+                    : "Passe dein öffentliches Profil und deinen Account an."}
               </p>
             </div>
             <div className="mt-2 inline-flex shrink-0 items-center rounded-full bg-slate-100 p-1 text-xs font-bold text-slate-500">
@@ -155,6 +168,17 @@ export function DashboardContent({
                 }`}
               >
                 Editor
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("design")}
+                className={`rounded-full px-4 py-1.5 transition-all ${
+                  activeTab === "design"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                Design
               </button>
               <button
                 type="button"
@@ -213,14 +237,29 @@ export function DashboardContent({
                 )}
               </div>
             </>
+          ) : activeTab === "design" ? (
+            <DashboardDesignPanel />
           ) : (
             <DashboardSettingsPanel />
           )}
         </div>
 
-        <aside className="hidden lg:block">
+        <aside className="relative z-0 hidden lg:block">
           <div className="sticky top-12 flex flex-col items-center">
-            <div className="relative h-[720px] w-[350px] overflow-hidden rounded-[3.5rem] border-12 border-slate-900 bg-white shadow-2xl">
+            <div
+              className="relative h-[720px] w-[350px] overflow-hidden rounded-[3.5rem] border-12 border-slate-900 shadow-2xl"
+              style={{
+                backgroundColor:
+                  (profile?.theme as ThemeConfig)?.backgroundColor ??
+                  defaultTheme.backgroundColor,
+                color:
+                  (profile?.theme as ThemeConfig)?.textColor ??
+                  defaultTheme.textColor,
+                fontFamily:
+                  (profile?.theme as ThemeConfig)?.fontFamily ??
+                  defaultTheme.fontFamily,
+              }}
+            >
               <div className="absolute top-0 left-1/2 z-20 h-7 w-36 -translate-x-1/2 rounded-b-3xl bg-slate-900" />
 
               <div className="custom-scrollbar h-full w-full overflow-y-auto px-6 pt-24 pb-12 text-center">
@@ -228,22 +267,69 @@ export function DashboardContent({
                   <div className="h-full w-full rounded-full bg-slate-100 shadow-inner" />
                 </div>
 
-                <div className="mx-auto mb-2 h-4 w-32 shrink-0 rounded-full bg-slate-100" />
-                <div className="mx-auto mb-10 h-3 w-40 shrink-0 rounded-full bg-slate-50" />
+                <div
+                  className="mx-auto mb-2 h-4 w-32 shrink-0 rounded-full"
+                  style={{
+                    backgroundColor:
+                      (profile?.theme as ThemeConfig)?.textColor ??
+                      defaultTheme.textColor,
+                    opacity: 0.1,
+                  }}
+                />
+                <div
+                  className="mx-auto mb-10 h-3 w-40 shrink-0 rounded-full"
+                  style={{
+                    backgroundColor:
+                      (profile?.theme as ThemeConfig)?.textColor ??
+                      defaultTheme.textColor,
+                    opacity: 0.05,
+                  }}
+                />
 
                 <div className="w-full space-y-3">
-                  {blocks?.map((block) => (
-                    <div
-                      key={block.id}
-                      className="w-full rounded-2xl border border-slate-100 bg-white px-4 py-4 text-center text-sm font-bold shadow-sm transition-all hover:scale-[1.02]"
-                    >
-                      {block.title ?? "Unbenannt"}
-                    </div>
-                  ))}
+                  {blocks?.map((block) => {
+                    const btnTheme =
+                      (profile?.theme as ThemeConfig)?.buttonStyle ??
+                      defaultTheme.buttonStyle;
+                    const shadowClass =
+                      {
+                        none: "",
+                        sm: "shadow-sm",
+                        md: "shadow-md",
+                        lg: "shadow-lg",
+                        xl: "shadow-xl",
+                      }[btnTheme.shadow] ?? "shadow-sm";
+
+                    return (
+                      <div
+                        key={block.id}
+                        className={`w-full px-4 py-4 text-center text-sm font-bold transition-all hover:scale-[1.02] ${shadowClass}`}
+                        style={{
+                          backgroundColor: btnTheme.backgroundColor,
+                          color: btnTheme.textColor,
+                          borderColor: btnTheme.borderColor,
+                          borderWidth: `${btnTheme.borderWidth}px`,
+                          borderStyle:
+                            btnTheme.borderWidth > 0 ? "solid" : "none",
+                          borderRadius: `${btnTheme.borderRadius}px`,
+                        }}
+                      >
+                        {block.title ?? "Unbenannt"}
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <div className="mt-10 shrink-0 pb-4">
-                  <p className="font-display text-[10px] font-black tracking-widest text-slate-200">
+                  <p
+                    className="font-display text-[10px] font-black tracking-widest uppercase"
+                    style={{
+                      color:
+                        (profile?.theme as ThemeConfig)?.textColor ??
+                        defaultTheme.textColor,
+                      opacity: 0.2,
+                    }}
+                  >
                     PLYST.CC
                   </p>
                 </div>
@@ -260,4 +346,3 @@ export function DashboardContent({
     </div>
   );
 }
-

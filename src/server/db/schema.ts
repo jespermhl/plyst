@@ -19,6 +19,7 @@ export const profiles = pgTable("profiles", {
   handle: text("handle").unique(),
   displayName: text("display_name"),
   bio: text("bio"),
+  theme: jsonb("theme"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
