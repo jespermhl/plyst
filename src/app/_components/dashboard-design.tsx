@@ -12,31 +12,37 @@ import {
 export function DashboardDesignPanel() {
   const { data: profile } = api.profile.getMe.useQuery();
   const utils = api.useUtils();
+  const saveCounterRef = useRef(0);
 
   const updateProfile = api.profile.update.useMutation({
-    onSuccess: () => {
-      void utils.profile.getMe.invalidate();
+    onMutate: () => {
+      return { saveId: saveCounterRef.current };
+    },
+    onSuccess: (data, variables, context) => {
+      if (context?.saveId === saveCounterRef.current) {
+        void utils.profile.getMe.invalidate();
+      }
     },
     onError: (error) => {
       alert(`Fehler beim Speichern: ${error.message}`);
     },
   });
 
-  const [theme, setTheme] = useState<ThemeConfig>(defaultTheme);
+  const currentTheme = deepMergeTheme(defaultTheme, profile?.theme);
 
-  useEffect(() => {
-    if (profile?.theme) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTheme(deepMergeTheme(defaultTheme, profile.theme));
-    }
-  }, [profile?.theme]);
+  const applyOptimisticUpdate = (newTheme: ThemeConfig) => {
+    utils.profile.getMe.setData(undefined, (old) => {
+      if (!old) return old;
+      return { ...old, theme: newTheme as any };
+    });
+  };
 
   const handleChange = <K extends keyof ThemeConfig>(
     key: K,
     value: ThemeConfig[K],
   ) => {
-    const newTheme = { ...theme, [key]: value };
-    setTheme(newTheme);
+    const newTheme = { ...currentTheme, [key]: value };
+    applyOptimisticUpdate(newTheme);
     saveTheme(newTheme);
   };
 
@@ -45,10 +51,10 @@ export function DashboardDesignPanel() {
     value: string | number,
   ) => {
     const newTheme = {
-      ...theme,
-      buttonStyle: { ...theme.buttonStyle, [key]: value },
+      ...currentTheme,
+      buttonStyle: { ...currentTheme.buttonStyle, [key]: value },
     };
-    setTheme(newTheme);
+    applyOptimisticUpdate(newTheme);
     saveTheme(newTheme);
   };
 
@@ -59,6 +65,8 @@ export function DashboardDesignPanel() {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
+      saveCounterRef.current += 1;
+
       saveTimeoutRef.current = setTimeout(() => {
         updateProfile.mutate({
           theme: newTheme,
@@ -88,7 +96,7 @@ export function DashboardDesignPanel() {
             </label>
             <input
               type="color"
-              value={theme.backgroundColor}
+              value={currentTheme.backgroundColor}
               onChange={(e) => handleChange("backgroundColor", e.target.value)}
               className="h-10 w-16 cursor-pointer rounded-lg border-0 bg-transparent p-0"
             />
@@ -100,7 +108,7 @@ export function DashboardDesignPanel() {
             </label>
             <input
               type="color"
-              value={theme.textColor}
+              value={currentTheme.textColor}
               onChange={(e) => handleChange("textColor", e.target.value)}
               className="h-10 w-16 cursor-pointer rounded-lg border-0 bg-transparent p-0"
             />
@@ -111,7 +119,7 @@ export function DashboardDesignPanel() {
               Schriftart
             </label>
             <select
-              value={theme.fontFamily}
+              value={currentTheme.fontFamily}
               onChange={(e) => handleChange("fontFamily", e.target.value)}
               className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 outline-none focus:ring-2 focus:ring-blue-100"
             >
@@ -135,7 +143,7 @@ export function DashboardDesignPanel() {
             </label>
             <input
               type="color"
-              value={theme.buttonStyle.backgroundColor}
+              value={currentTheme.buttonStyle.backgroundColor}
               onChange={(e) =>
                 handleButtonChange("backgroundColor", e.target.value)
               }
@@ -149,7 +157,7 @@ export function DashboardDesignPanel() {
             </label>
             <input
               type="color"
-              value={theme.buttonStyle.textColor}
+              value={currentTheme.buttonStyle.textColor}
               onChange={(e) => handleButtonChange("textColor", e.target.value)}
               className="h-10 w-16 cursor-pointer rounded-lg border-0 bg-transparent p-0"
             />
@@ -162,7 +170,7 @@ export function DashboardDesignPanel() {
               </label>
               <input
                 type="color"
-                value={theme.buttonStyle.borderColor}
+                value={currentTheme.buttonStyle.borderColor}
                 onChange={(e) =>
                   handleButtonChange("borderColor", e.target.value)
                 }
@@ -176,14 +184,14 @@ export function DashboardDesignPanel() {
                   Randdicke
                 </label>
                 <span className="text-xs text-slate-500">
-                  {theme.buttonStyle.borderWidth}px
+                  {currentTheme.buttonStyle.borderWidth}px
                 </span>
               </div>
               <input
                 type="range"
                 min="0"
                 max="10"
-                value={theme.buttonStyle.borderWidth}
+                value={currentTheme.buttonStyle.borderWidth}
                 onChange={(e) =>
                   handleButtonChange("borderWidth", parseInt(e.target.value))
                 }
@@ -197,14 +205,14 @@ export function DashboardDesignPanel() {
                   Abrundung (Radius)
                 </label>
                 <span className="text-xs text-slate-500">
-                  {theme.buttonStyle.borderRadius}px
+                  {currentTheme.buttonStyle.borderRadius}px
                 </span>
               </div>
               <input
                 type="range"
                 min="0"
                 max="40"
-                value={theme.buttonStyle.borderRadius}
+                value={currentTheme.buttonStyle.borderRadius}
                 onChange={(e) =>
                   handleButtonChange("borderRadius", parseInt(e.target.value))
                 }
@@ -217,7 +225,7 @@ export function DashboardDesignPanel() {
                 Schatten
               </label>
               <select
-                value={theme.buttonStyle.shadow}
+                value={currentTheme.buttonStyle.shadow}
                 onChange={(e) => handleButtonChange("shadow", e.target.value)}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 outline-none focus:ring-2 focus:ring-blue-100"
               >

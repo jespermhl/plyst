@@ -3,7 +3,12 @@ import { z } from "zod";
 import { profiles } from "~/server/db/schema";
 import { clerkClient } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
-import { ThemeConfigSchema, type ThemeConfig } from "~/lib/theme";
+import {
+  ThemeConfigSchema,
+  type ThemeConfig,
+  defaultTheme,
+  deepMergeTheme,
+} from "~/lib/theme";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
 function canonicalizeHandle(input: string): string {
@@ -194,11 +199,18 @@ export const profileRouter = createTRPCRouter({
         });
       }
 
+      const mergedTheme =
+        typeof input.theme !== "undefined"
+          ? deepMergeTheme(existingProfile.theme ?? defaultTheme, input.theme)
+          : undefined;
+
+      const { theme: _themeInput, ...restInput } = input;
+
       const updatedRows = await ctx.db
         .update(profiles)
         .set({
-          ...input,
-          theme: input.theme as ThemeConfig | undefined,
+          ...restInput,
+          ...(mergedTheme !== undefined ? { theme: mergedTheme } : {}),
         })
         .where(eq(profiles.clerkId, userId))
         .returning();
