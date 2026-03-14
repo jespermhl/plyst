@@ -2,6 +2,7 @@ import { api } from "~/trpc/server";
 import { notFound } from "next/navigation";
 import { clerkClient } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
+import { deepMergeTheme, defaultTheme } from "~/lib/theme";
 
 function normalizeClerkError(error: unknown): {
   status?: number;
@@ -66,43 +67,7 @@ export default async function PublicProfilePage({
     console.error("Clerk API Error in PublicProfilePage", info ?? {});
   }
 
-  const rawTheme = data.profile.theme as Record<string, unknown> | null;
-  const rawBtnTheme = rawTheme?.buttonStyle as Record<string, unknown> | null;
-
-  const theme = {
-    backgroundColor:
-      typeof rawTheme?.backgroundColor === "string"
-        ? rawTheme.backgroundColor
-        : "#fafafa",
-    textColor:
-      typeof rawTheme?.textColor === "string" ? rawTheme.textColor : "#0f172a",
-    fontFamily:
-      typeof rawTheme?.fontFamily === "string" ? rawTheme.fontFamily : "Inter",
-    buttonStyle: {
-      backgroundColor:
-        typeof rawBtnTheme?.backgroundColor === "string"
-          ? rawBtnTheme.backgroundColor
-          : "#ffffff",
-      textColor:
-        typeof rawBtnTheme?.textColor === "string"
-          ? rawBtnTheme.textColor
-          : "#0f172a",
-      borderColor:
-        typeof rawBtnTheme?.borderColor === "string"
-          ? rawBtnTheme.borderColor
-          : "#f1f5f9",
-      borderWidth:
-        typeof rawBtnTheme?.borderWidth === "number"
-          ? rawBtnTheme.borderWidth
-          : 1,
-      borderRadius:
-        typeof rawBtnTheme?.borderRadius === "number"
-          ? rawBtnTheme.borderRadius
-          : 24,
-      shadow:
-        typeof rawBtnTheme?.shadow === "string" ? rawBtnTheme.shadow : "sm",
-    },
-  };
+  const theme = deepMergeTheme(defaultTheme, data.profile.theme);
   const btnTheme = theme.buttonStyle;
 
   return (

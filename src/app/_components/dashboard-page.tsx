@@ -14,11 +14,8 @@ import {
 import { type RouterOutputs } from "~/trpc/react";
 import { useEffect, useRef, useState } from "react";
 import { DashboardSettingsPanel } from "./dashboard-settings";
-import {
-  DashboardDesignPanel,
-  defaultTheme,
-  type ThemeConfig,
-} from "./dashboard-design";
+import { DashboardDesignPanel } from "./dashboard-design";
+import { defaultTheme, deepMergeTheme } from "~/lib/theme";
 import {
   arrayMove,
   SortableContext,
@@ -246,95 +243,88 @@ export function DashboardContent({
 
         <aside className="relative z-0 hidden lg:block">
           <div className="sticky top-12 flex flex-col items-center">
-            <div
-              className="relative h-[720px] w-[350px] overflow-hidden rounded-[3.5rem] border-12 border-slate-900 shadow-2xl"
-              style={{
-                backgroundColor:
-                  (profile?.theme as ThemeConfig)?.backgroundColor ??
-                  defaultTheme.backgroundColor,
-                color:
-                  (profile?.theme as ThemeConfig)?.textColor ??
-                  defaultTheme.textColor,
-                fontFamily:
-                  (profile?.theme as ThemeConfig)?.fontFamily ??
-                  defaultTheme.fontFamily,
-              }}
-            >
-              <div className="absolute top-0 left-1/2 z-20 h-7 w-36 -translate-x-1/2 rounded-b-3xl bg-slate-900" />
-
-              <div className="custom-scrollbar h-full w-full overflow-y-auto px-6 pt-24 pb-12 text-center">
-                <div className="mx-auto mb-4 h-24 w-24 shrink-0 rounded-full border-[3px] border-blue-500/10 p-1.5 shadow-sm">
-                  <div className="h-full w-full rounded-full bg-slate-100 shadow-inner" />
-                </div>
-
+            {(() => {
+              const previewTheme = deepMergeTheme(defaultTheme, profile?.theme);
+              return (
                 <div
-                  className="mx-auto mb-2 h-4 w-32 shrink-0 rounded-full"
+                  className="relative h-[720px] w-[350px] overflow-hidden rounded-[3.5rem] border-12 border-slate-900 shadow-2xl"
                   style={{
-                    backgroundColor:
-                      (profile?.theme as ThemeConfig)?.textColor ??
-                      defaultTheme.textColor,
-                    opacity: 0.1,
+                    backgroundColor: previewTheme.backgroundColor,
+                    color: previewTheme.textColor,
+                    fontFamily: previewTheme.fontFamily,
                   }}
-                />
-                <div
-                  className="mx-auto mb-10 h-3 w-40 shrink-0 rounded-full"
-                  style={{
-                    backgroundColor:
-                      (profile?.theme as ThemeConfig)?.textColor ??
-                      defaultTheme.textColor,
-                    opacity: 0.05,
-                  }}
-                />
+                >
+                  <div className="absolute top-0 left-1/2 z-20 h-7 w-36 -translate-x-1/2 rounded-b-3xl bg-slate-900" />
 
-                <div className="w-full space-y-3">
-                  {blocks?.map((block) => {
-                    const btnTheme =
-                      (profile?.theme as ThemeConfig)?.buttonStyle ??
-                      defaultTheme.buttonStyle;
-                    const shadowClass =
-                      {
-                        none: "",
-                        sm: "shadow-sm",
-                        md: "shadow-md",
-                        lg: "shadow-lg",
-                        xl: "shadow-xl",
-                      }[btnTheme.shadow] ?? "shadow-sm";
+                  <div className="custom-scrollbar h-full w-full overflow-y-auto px-6 pt-24 pb-12 text-center">
+                    <div className="mx-auto mb-4 h-24 w-24 shrink-0 rounded-full border-[3px] border-blue-500/10 p-1.5 shadow-sm">
+                      <div className="h-full w-full rounded-full bg-slate-100 shadow-inner" />
+                    </div>
 
-                    return (
-                      <div
-                        key={block.id}
-                        className={`w-full px-4 py-4 text-center text-sm font-bold transition-all hover:scale-[1.02] ${shadowClass}`}
+                    <div
+                      className="mx-auto mb-2 h-4 w-32 shrink-0 rounded-full"
+                      style={{
+                        backgroundColor: previewTheme.textColor,
+                        opacity: 0.1,
+                      }}
+                    />
+                    <div
+                      className="mx-auto mb-10 h-3 w-40 shrink-0 rounded-full"
+                      style={{
+                        backgroundColor: previewTheme.textColor,
+                        opacity: 0.05,
+                      }}
+                    />
+
+                    <div className="w-full space-y-3">
+                      {blocks?.map((block) => {
+                        const btnTheme = previewTheme.buttonStyle;
+                        const shadowClass =
+                          (
+                            {
+                              none: "",
+                              sm: "shadow-sm",
+                              md: "shadow-md",
+                              lg: "shadow-lg",
+                              xl: "shadow-xl",
+                            } as Record<string, string>
+                          )[btnTheme.shadow] ?? "shadow-sm";
+
+                        return (
+                          <div
+                            key={block.id}
+                            className={`w-full px-4 py-4 text-center text-sm font-bold transition-all hover:scale-[1.02] ${shadowClass}`}
+                            style={{
+                              backgroundColor: btnTheme.backgroundColor,
+                              color: btnTheme.textColor,
+                              borderColor: btnTheme.borderColor,
+                              borderWidth: `${btnTheme.borderWidth}px`,
+                              borderStyle:
+                                btnTheme.borderWidth > 0 ? "solid" : "none",
+                              borderRadius: `${btnTheme.borderRadius}px`,
+                            }}
+                          >
+                            {block.title ?? "Unbenannt"}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="mt-10 shrink-0 pb-4">
+                      <p
+                        className="font-display text-[10px] font-black tracking-widest uppercase"
                         style={{
-                          backgroundColor: btnTheme.backgroundColor,
-                          color: btnTheme.textColor,
-                          borderColor: btnTheme.borderColor,
-                          borderWidth: `${btnTheme.borderWidth}px`,
-                          borderStyle:
-                            btnTheme.borderWidth > 0 ? "solid" : "none",
-                          borderRadius: `${btnTheme.borderRadius}px`,
+                          color: previewTheme.textColor,
+                          opacity: 0.2,
                         }}
                       >
-                        {block.title ?? "Unbenannt"}
-                      </div>
-                    );
-                  })}
+                        PLYST.CC
+                      </p>
+                    </div>
+                  </div>
                 </div>
-
-                <div className="mt-10 shrink-0 pb-4">
-                  <p
-                    className="font-display text-[10px] font-black tracking-widest uppercase"
-                    style={{
-                      color:
-                        (profile?.theme as ThemeConfig)?.textColor ??
-                        defaultTheme.textColor,
-                      opacity: 0.2,
-                    }}
-                  >
-                    PLYST.CC
-                  </p>
-                </div>
-              </div>
-            </div>
+              );
+            })()}
 
             <div className="mt-8 flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-[10px] font-bold tracking-widest text-white uppercase shadow-lg">
               <div className="h-2 w-2 animate-pulse rounded-full bg-green-400" />

@@ -1,9 +1,10 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { profiles } from "~/server/db/schema";
 import { clerkClient } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
+import { ThemeConfigSchema, type ThemeConfig } from "~/lib/theme";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
 function canonicalizeHandle(input: string): string {
   return input.trim().toLowerCase();
@@ -161,7 +162,7 @@ export const profileRouter = createTRPCRouter({
       z.object({
         displayName: z.string().min(1).max(50).optional(),
         bio: z.string().max(160).optional(),
-        theme: z.any().optional(),
+        theme: ThemeConfigSchema.optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -195,7 +196,10 @@ export const profileRouter = createTRPCRouter({
 
       const updatedRows = await ctx.db
         .update(profiles)
-        .set(input)
+        .set({
+          ...input,
+          theme: input.theme as ThemeConfig | undefined,
+        })
         .where(eq(profiles.clerkId, userId))
         .returning();
 

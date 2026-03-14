@@ -1,46 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { api } from "~/trpc/react";
-
-export type ThemeConfig = {
-  backgroundColor: string;
-  textColor: string;
-  fontFamily: string;
-  buttonStyle: {
-    backgroundColor: string;
-    textColor: string;
-    borderColor: string;
-    borderWidth: number;
-    borderRadius: number;
-    shadow: string;
-  };
-};
-
-export const defaultTheme: ThemeConfig = {
-  backgroundColor: "#fafafa",
-  textColor: "#0f172a",
-  fontFamily: "Inter",
-  buttonStyle: {
-    backgroundColor: "#ffffff",
-    textColor: "#0f172a",
-    borderColor: "#f1f5f9",
-    borderWidth: 1,
-    borderRadius: 24,
-    shadow: "sm",
-  },
-};
-
-export const FONT_OPTIONS = [
-  "Inter",
-  "Roboto",
-  "Playfair Display",
-  "Montserrat",
-  "Lora",
-  "Oswald",
-  "Raleway",
-  "Poppins",
-];
+import {
+  type ThemeConfig,
+  defaultTheme,
+  FONT_OPTIONS,
+  deepMergeTheme,
+} from "~/lib/theme";
 
 export function DashboardDesignPanel() {
   const { data: profile } = api.profile.getMe.useQuery();
@@ -60,7 +27,7 @@ export function DashboardDesignPanel() {
   useEffect(() => {
     if (profile?.theme) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTheme({ ...defaultTheme, ...(profile.theme as Partial<ThemeConfig>) });
+      setTheme(deepMergeTheme(defaultTheme, profile.theme));
     }
   }, [profile?.theme]);
 
@@ -85,12 +52,29 @@ export function DashboardDesignPanel() {
     saveTheme(newTheme);
   };
 
-  // Debounced save
-  const saveTheme = (newTheme: ThemeConfig) => {
-    updateProfile.mutate({
-      theme: newTheme,
-    });
-  };
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const saveTheme = useCallback(
+    (newTheme: ThemeConfig) => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      saveTimeoutRef.current = setTimeout(() => {
+        updateProfile.mutate({
+          theme: newTheme,
+        });
+      }, 500);
+    },
+    [updateProfile],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="space-y-8 pb-32">

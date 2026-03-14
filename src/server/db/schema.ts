@@ -6,6 +6,7 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
+import { type ThemeConfig } from "~/lib/theme";
 
 export const waitlist = pgTable("waitlist", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -19,7 +20,7 @@ export const profiles = pgTable("profiles", {
   handle: text("handle").unique(),
   displayName: text("display_name"),
   bio: text("bio"),
-  theme: jsonb("theme"),
+  theme: jsonb("theme").$type<ThemeConfig>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
